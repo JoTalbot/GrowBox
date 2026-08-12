@@ -1,5 +1,5 @@
 {
-  "version": "6.3.2",
-  "url": "https://raw.githubusercontent.com/JoTalbot/GrowBox/main/firmware/bin/GrowBox-v6.3.2.bin",
-  "notes": "Heartbeat 60s, MQTT HA, stale OTA skip, mode fields in status."
+  "version": "6.3.3",
+  "url": "https://raw.githubusercontent.com/JoTalbot/GrowBox/main/firmware/bin/GrowBox-v6.3.3.bin",
+  "notes": "Immediate manual relays, no OTA replay, phone summary line."
 }
