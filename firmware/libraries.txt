@@ -1,0 +1,16 @@
+# Arduino Library Manager
+WiFiManager
+ElegantOTA
+DHT sensor library
+Adafruit Unified Sensor
+OneWire
+DallasTemperature
+
+# Built-in (ESP32 core)
+# WiFi
+# WebServer
+# ESPmDNS
+# Preferences
+# WiFiClientSecure
+# time.h
+# esp_task_wdt

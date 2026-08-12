@@ -47,6 +47,7 @@
 #define RELAY_OFF         HIGH
 
 #define WDT_TIMEOUT_SEC   8
+#define FIRMWARE_VERSION  "6.1"
 
 // ================= СТАДИИ ГРОВА =================
 enum GrowStage {
@@ -153,8 +154,10 @@ unsigned long lastPowerAlertTime = 0;
 // Таймеры
 unsigned long cycleStartTimestamp = 0;
 unsigned long lastWateredTime[3]  = {0, 0, 0};
+unsigned long lastWateredUnix[3]  = {0, 0, 0};
 int activeWateringZone = -1;
 unsigned long wateringStartTime = 0;
+bool wdtStarted = false;
 
 unsigned long lastSensorRead = 0;
 const unsigned long SENSOR_INTERVAL = 2500;
@@ -165,6 +168,96 @@ bool windState = true;
 // Таймер микро-проветривания для режима сушки
 unsigned long dryVentTimer = 0;
 bool dryVentState = false;
+
+void feedWatchdog() {
+  if (wdtStarted) {
+    esp_task_wdt_reset();
+  }
+}
+
+void startWatchdog() {
+  if (wdtStarted) return;
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+  esp_task_wdt_config_t twdt_config = {
+      .timeout_ms = WDT_TIMEOUT_SEC * 1000,
+      .idle_core_mask = (1 << portNUM_PROCESSORS) - 1,
+      .trigger_panic = true
+  };
+  esp_task_wdt_init(&twdt_config);
+#else
+  esp_task_wdt_init(WDT_TIMEOUT_SEC, true);
+#endif
+  esp_task_wdt_add(NULL);
+  wdtStarted = true;
+}
+
+bool ntpReady() {
+  time_t now;
+  time(&now);
+  return now > 1700000000UL;
+}
+
+void persistULong(const char* key, unsigned long value) {
+  prefs.begin("growbox", false);
+  prefs.putULong(key, value);
+  prefs.end();
+}
+
+void ensureCycleStart() {
+  if (cycleStartTimestamp != 0 || !ntpReady()) return;
+  time_t now;
+  time(&now);
+  cycleStartTimestamp = (unsigned long)now;
+  persistULong("start", cycleStartTimestamp);
+}
+
+void startNewCycle() {
+  if (!ntpReady()) return;
+  time_t now;
+  time(&now);
+  cycleStartTimestamp = (unsigned long)now;
+  persistULong("start", cycleStartTimestamp);
+}
+
+void markZoneWatered(int zone) {
+  if (zone < 0 || zone >= 3) return;
+  lastWateredTime[zone] = millis();
+  if (ntpReady()) {
+    time_t now;
+    time(&now);
+    lastWateredUnix[zone] = (unsigned long)now;
+    persistULong((String("wunix") + zone).c_str(), lastWateredUnix[zone]);
+  }
+}
+
+bool soakDelayPassed(int zone) {
+  unsigned long nowMs = millis();
+  if (lastWateredTime[zone] != 0 && (nowMs - lastWateredTime[zone] < SOIL_SOAK_DELAY)) {
+    return false;
+  }
+  if (lastWateredUnix[zone] != 0 && ntpReady()) {
+    time_t now;
+    time(&now);
+    if ((unsigned long)now >= lastWateredUnix[zone] &&
+        ((unsigned long)now - lastWateredUnix[zone]) < (SOIL_SOAK_DELAY / 1000UL)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool fallbackWaterDue(int zone) {
+  if (lastWateredUnix[zone] != 0 && ntpReady()) {
+    time_t now;
+    time(&now);
+    return ((unsigned long)now - lastWateredUnix[zone]) >= (FALLBACK_WATERING_INTERVAL / 1000UL);
+  }
+  if (lastWateredTime[zone] == 0) {
+    lastWateredTime[zone] = millis();
+    return false;
+  }
+  return (millis() - lastWateredTime[zone]) >= FALLBACK_WATERING_INTERVAL;
+}
 
 void setRelay(uint8_t pin, bool state) {
   digitalWrite(pin, state ? RELAY_ON : RELAY_OFF);
@@ -192,20 +285,43 @@ int getGrowDay() {
 }
 
 // ================= TELEGRAM =================
+String urlEncode(const String& value) {
+  String encoded;
+  encoded.reserve(value.length() * 3 / 2);
+  const char* hex = "0123456789ABCDEF";
+  for (size_t i = 0; i < value.length(); i++) {
+    char c = value[i];
+    if (isalnum((unsigned char)c) || c == '-' || c == '_' || c == '.' || c == '~') {
+      encoded += c;
+    } else if (c == ' ') {
+      encoded += '+';
+    } else {
+      encoded += '%';
+      encoded += hex[(c >> 4) & 0x0F];
+      encoded += hex[c & 0x0F];
+    }
+  }
+  return encoded;
+}
+
 void sendTelegramMessage(String msg) {
   if (!tgEnabled || tgBotToken.length() < 15 || tgChatId.length() < 3) return;
-  
+  if (WiFi.status() != WL_CONNECTED) return;
+
+  feedWatchdog();
   WiFiClientSecure client;
   client.setInsecure();
   client.setTimeout(3000);
   if (client.connect("api.telegram.org", 443)) {
-    String payload = "chat_id=" + tgChatId + "&text=" + msg + "&parse_mode=HTML";
+    String payload = "chat_id=" + urlEncode(tgChatId) + "&text=" + urlEncode(msg) + "&parse_mode=HTML";
     client.print(String("POST /bot") + tgBotToken + "/sendMessage HTTP/1.1\r\n" +
                  "Host: api.telegram.org\r\n" +
                  "Content-Type: application/x-www-form-urlencoded\r\n" +
                  "Content-Length: " + payload.length() + "\r\n" +
                  "Connection: close\r\n\r\n" + payload);
   }
+  client.stop();
+  feedWatchdog();
 }
 
 void triggerWatering(int zone) {
@@ -236,13 +352,16 @@ void handleTelegramCommand(String cmd) {
   cmd.toLowerCase();
 
   if (cmd == "/start" || cmd == "/help") {
-    String helpMsg = "🌿 <b>Команды GrowBox Enterprise v6.0:</b>\n\n";
+    String helpMsg = "🌿 <b>Команды GrowBox Enterprise v";
+    helpMsg += FIRMWARE_VERSION;
+    helpMsg += ":</b>\n\n";
     helpMsg += "/status - Полная сводка параметров\n";
     helpMsg += "/photo - Снимок с камеры\n";
     helpMsg += "/water1, /water2, /water3 - Полив зон\n";
     helpMsg += "/veg - Вегетация (18/6)\n";
     helpMsg += "/bloom - Цветение (12/12)\n";
     helpMsg += "/dry - Режим сушки (60/60, свет ВЫКЛ)\n";
+    helpMsg += "/resetday - Сбросить счётчик дня цикла\n";
     helpMsg += "/help - Справка";
     sendTelegramMessage(helpMsg);
   }
@@ -255,7 +374,9 @@ void handleTelegramCommand(String cmd) {
     if (getLocalTime(&timeinfo)) {
       strftime(timeStr, sizeof(timeStr), "%H:%M:%S", &timeinfo);
     }
-    String s = "🌿 <b>Статус GrowBox [Enterprise v6.0]</b>\n\n";
+    String s = "🌿 <b>Статус GrowBox [Enterprise v";
+    s += FIRMWARE_VERSION;
+    s += "]</b>\n\n";
     String stName = "Вегетация (18/6)";
     if (currentStage == STAGE_BLOOM) stName = "Цветение (12/12)";
     else if (currentStage == STAGE_DRY) stName = "Сушка 60/60 (Урожай)";
@@ -349,6 +470,7 @@ void checkTelegramUpdates() {
       updateIndex = response.indexOf("\"update_id\":", updateIndex + 1);
     }
   }
+  feedWatchdog();
 }
 
 void logHistoryPoint() {
@@ -420,6 +542,7 @@ void handleApiData() {
   json += "\"powerSenseEn\":" + String(enablePowerSense ? 1 : 0) + ",";
   json += "\"tgEn\":" + String(tgEnabled ? 1 : 0) + ",";
   json += "\"camIp\":\"" + camIp + "\",";
+  json += "\"fw\":\"" + String(FIRMWARE_VERSION) + "\",";
   json += "\"watering\":" + String(activeWateringZone);
   json += "}";
 
@@ -462,9 +585,12 @@ void handleExportCsv() {
 }
 
 void handleRoot() {
+  feedWatchdog();
   String html = "<!DOCTYPE html><html lang='ru'><head><meta charset='UTF-8'>";
   html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
-  html += "<title>Critical Kush Enterprise v6</title>";
+  html += "<title>Critical Kush Enterprise v";
+  html += FIRMWARE_VERSION;
+  html += "</title>";
   html += "<style>";
   html += "* { box-sizing: border-box; font-family: -apple-system, system-ui, sans-serif; }";
   html += "body { background: #070a08; color: #e2e8e3; margin: 0; padding: 10px; }";
@@ -508,7 +634,9 @@ void handleRoot() {
   html += "<div id='floodAlert' class='alert' style='background:#d00000;'>🚨 ПРОТЕЧКА В ПОДДОНЕ! Помпа отключена.</div>";
 
   html += "<header>";
-  html += "<h1>🌿 Critical Kush Enterprise v6.0</h1>";
+  html += "<h1>🌿 Critical Kush Enterprise v";
+  html += FIRMWARE_VERSION;
+  html += "</h1>";
   html += "<div class='sub'>Режим: <b id='stTxt'>...</b> | <b id='dayTxt'>День ...</b> | Время: <b id='tmTxt'>--:--</b></div>";
   html += "</header>";
 
@@ -597,12 +725,16 @@ void handleRoot() {
   html += "<label style='font-size:11px;'>Telegram Bot Token:</label><input type='text' name='tgToken' value='" + tgBotToken + "'>";
   html += "<label style='font-size:11px;'>Telegram Chat ID:</label><input type='text' name='tgChat' value='" + tgChatId + "'>";
   html += "<label style='font-size:11px;'>IP ESP32-CAM камеры:</label><input type='text' name='camIp' value='" + camIp + "'>";
-  html += "<div class='btn-grid'>";
+  html += "<div class='btn-grid' style='grid-template-columns: 1fr 1fr;'>";
   html += "<button type='submit' class='btn'>💾 Сохранить</button>";
-  html += "<button type='button' class='btn btn-sec' onclick='fetch(\"/toggleSafety\")'>🛡️ Переключить поплавок/протечку</button>";
+  html += "<button type='button' class='btn btn-sec' onclick='fetch(\"/resetCycle\")'>📅 Сбросить день цикла</button>";
+  html += "<button type='button' class='btn btn-sec' onclick='fetch(\"/toggleSafety\")'>🛡️ Поплавок / протечка</button>";
+  html += "<button type='button' class='btn btn-sec' onclick='fetch(\"/togglePower\")'>⚡ Датчик 220V</button>";
   html += "</div></form></div>";
 
-  html += "<div class='footer'><a href='/update'>📦 Прошивка по воздуху (OTA /update)</a> | WDT Watchdog Active 🛡️</div>";
+  html += "<div class='footer'><a href='/update'>📦 Прошивка по воздуху (OTA /update)</a> | WDT Watchdog | v";
+  html += FIRMWARE_VERSION;
+  html += "</div>";
   html += "</div>";
 
   html += "<script>";
@@ -703,6 +835,26 @@ void handleToggleSafety() {
   prefs.begin("growbox", false);
   prefs.putBool("safetyEn", enableSafetySensors);
   prefs.end();
+  server.send(200, "text/plain", enableSafetySensors ? "SAFETY_ON" : "SAFETY_OFF");
+}
+
+void handleTogglePower() {
+  enablePowerSense = !enablePowerSense;
+  prefs.begin("growbox", false);
+  prefs.putBool("powerEn", enablePowerSense);
+  prefs.end();
+  if (!enablePowerSense) {
+    powerGridOk = true;
+  }
+  server.send(200, "text/plain", enablePowerSense ? "POWER_SENSE_ON" : "POWER_SENSE_OFF");
+}
+
+void handleResetCycle() {
+  if (!ntpReady()) {
+    server.send(503, "text/plain", "NO_NTP");
+    return;
+  }
+  startNewCycle();
   server.send(200, "text/plain", "OK");
 }
 
@@ -739,7 +891,7 @@ void handleSaveConfig() {
   prefs.end();
 
   if (tgEnabled) {
-    sendTelegramMessage("🌿 <b>GrowBox Enterprise Connected!</b>\nКонтроллер Critical Kush Enterprise v6.0 готов к работе. Напишите /help");
+    sendTelegramMessage(String("🌿 <b>GrowBox Enterprise Connected!</b>\nКонтроллер Critical Kush Enterprise v") + FIRMWARE_VERSION + " готов к работе. Напишите /help");
   }
 
   server.sendHeader("Location", "/");
@@ -793,10 +945,9 @@ void setup() {
   for (int i = 0; i < 3; i++) {
     soilCalibDry[i] = prefs.getInt(("dry" + String(i)).c_str(), 3200);
     soilCalibWet[i] = prefs.getInt(("wet" + String(i)).c_str(), 1400);
+    lastWateredUnix[i] = prefs.getULong((String("wunix") + i).c_str(), 0);
   }
   prefs.end();
-
-  setGrowStage(currentStage);
 
   // 5. Сенсоры
   dht.begin();
@@ -815,6 +966,8 @@ void setup() {
     ESP.restart();
   }
 
+  startWatchdog();
+
   MDNS.begin("growbox");
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
 
@@ -826,20 +979,25 @@ void setup() {
   server.on("/water", handleWater);
   server.on("/setStage", handleSetStage);
   server.on("/toggleSafety", handleToggleSafety);
+  server.on("/togglePower", handleTogglePower);
+  server.on("/resetCycle", handleResetCycle);
   server.on("/calib", handleCalib);
   server.on("/saveConfig", HTTP_POST, handleSaveConfig);
 
   ElegantOTA.begin(&server);
   server.begin();
 
-  Serial.println("[GrowBox Enterprise v6.0] Запущен!");
+  Serial.print("[GrowBox Enterprise v");
+  Serial.print(FIRMWARE_VERSION);
+  Serial.println("] Запущен!");
 }
 
 // ================= LOOP =================
 void loop() {
-  esp_task_wdt_reset();
+  feedWatchdog();
   server.handleClient();
   ElegantOTA.loop();
+  ensureCycleStart();
 
   unsigned long currentMillis = millis();
 
@@ -885,11 +1043,15 @@ void loop() {
       }
     }
 
-    // --- Контроль сети 220V ---
-    powerGridOk = (digitalRead(POWER_SENSE_PIN) == LOW); // LOW = оптопара открыта (220V есть)
-    if (!powerGridOk && (currentMillis - lastPowerAlertTime > 1800000 || lastPowerAlertTime == 0)) {
-      lastPowerAlertTime = currentMillis;
-      sendTelegramMessage("🚨 <b>ВНИМАНИЕ:</b> Отключение сети 220V! Система работает от резервного аккумулятора.");
+    // --- Контроль сети 220V (только если датчик включён в настройках) ---
+    if (enablePowerSense) {
+      powerGridOk = (digitalRead(POWER_SENSE_PIN) == LOW); // LOW = оптопара открыта (220V есть)
+      if (!powerGridOk && (currentMillis - lastPowerAlertTime > 1800000 || lastPowerAlertTime == 0)) {
+        lastPowerAlertTime = currentMillis;
+        sendTelegramMessage("🚨 <b>ВНИМАНИЕ:</b> Отключение сети 220V! Система работает от резервного аккумулятора.");
+      }
+    } else {
+      powerGridOk = true;
     }
 
     // --- Защитные датчики ---
@@ -1005,8 +1167,8 @@ void loop() {
     }
   }
 
-  // 2. ИСТОРИЯ 24 ЧАСА (каждые 15 минут)
-  if (currentMillis - lastHistoryLog >= HISTORY_INTERVAL || lastHistoryLog == 0) {
+  // 2. ИСТОРИЯ 24 ЧАСА (каждые 15 минут, первую точку пишем после опроса датчиков)
+  if (lastSensorRead != 0 && (lastHistoryLog == 0 || currentMillis - lastHistoryLog >= HISTORY_INTERVAL)) {
     lastHistoryLog = currentMillis;
     logHistoryPoint();
   }
@@ -1043,15 +1205,14 @@ void loop() {
         for (int i = 0; i < 3; i++) {
           // Если датчик подключен -> полив по порогу влажности Dry-Back
           if (soilConnected[i]) {
-            if (soilMoisture[i] < soilDryThreshold && 
-                (currentMillis - lastWateredTime[i] >= SOIL_SOAK_DELAY || lastWateredTime[i] == 0)) {
+            if (soilMoisture[i] < soilDryThreshold && soakDelayPassed(i)) {
               triggerWatering(i);
               break;
             }
           }
           // Если датчик отключен -> РЕЗЕРВНЫЙ ТАЙМЕРНЫЙ ПОЛИВ (1 раз в сутки)
           else {
-            if (lastWateredTime[i] != 0 && (currentMillis - lastWateredTime[i] >= FALLBACK_WATERING_INTERVAL)) {
+            if (fallbackWaterDue(i)) {
               triggerWatering(i);
               break;
             }
