@@ -38,9 +38,11 @@ build/
 .pioenvs/
 .piolibdeps/
 *.elf
-*.bin
 *.hex
 *.map
+# allow prebuilt OTA images
+!firmware/bin/
+!firmware/bin/*.bin
 
 # Logs and local data
 *.log
