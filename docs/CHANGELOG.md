@@ -2,7 +2,7 @@
 
 ## 6.3.2 — 2026-08-12
 
-- Home Assistant MQTT Discovery: датчики, режимы реле, полив, стадия
+- Heartbeat ntfy раз в 60 сек (пульт почти в реальном времени)
 - Пакет REST для HA без прошивки: `homeassistant/growbox.yaml`
 
 ## 6.3.1 — 2026-08-12
