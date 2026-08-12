@@ -51,8 +51,10 @@ python3 tools/remote_status.py
 
 ## Сборка .bin для OTA
 
-- GitHub → Actions → **Build firmware** → скачать artifact `firmware.bin`
-- или локально: `pio run -e esp32dev` (файл в `.pio/build/esp32dev/firmware.bin`)
+- GitHub → Actions → **Build firmware** → artifact `firmware-bin` (`GrowBox-v6.3.bin` + сервис)
+- или локально: `pio run -e esp32dev` и `pio run -d firmware/Growbox_OTA_Service -e ota_service`
+- тег `v6.3.1` создаёт GitHub Release с обоими `.bin`
 
 Положи бинарник в GitHub Release и пропиши URL в `firmware/remote/version.json`.  
+OTA принимает и `https://`, и `http://`. 
 Команда `flash` или галочка «Автопрошивка» заставит коробку скачать и перезалиться.
