@@ -2,7 +2,7 @@
 
 Прошивка ESP32 для автоматического гроубокса: климат, свет с рассветом/закатом, полив трёх зон, безопасность и дашборд.
 
-Текущая версия прошивки: **v6.3**  
+Текущая версия прошивки: **v6.3.2**  
 Скетч: [`firmware/Growbox_CriticalKush_V6/Growbox_CriticalKush_V6.ino`](firmware/Growbox_CriticalKush_V6/Growbox_CriticalKush_V6.ino)
 
 ## Что умеет

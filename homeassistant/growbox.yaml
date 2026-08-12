@@ -1,0 +1,91 @@
+# Пакет Home Assistant без MQTT (работает на v6.3.1+).
+# Скопируй в config/packages/growbox.yaml и в configuration.yaml:
+#
+# homeassistant:
+#   packages: !include_dir_named packages
+#
+# IP коробки: 192.168.1.11 (growbox.local).
+
+rest:
+  - resource: http://192.168.1.11/api/data
+    scan_interval: 10
+    sensor:
+      - name: GrowBox температура
+        unique_id: growbox_temp
+        value_template: "{{ value_json.temp }}"
+        unit_of_measurement: "°C"
+        device_class: temperature
+      - name: GrowBox влажность
+        unique_id: growbox_hum
+        value_template: "{{ value_json.hum }}"
+        unit_of_measurement: "%"
+        device_class: humidity
+      - name: GrowBox VPD
+        unique_id: growbox_vpd
+        value_template: "{{ value_json.vpd }}"
+        unit_of_measurement: "kPa"
+      - name: GrowBox вода
+        unique_id: growbox_water_temp
+        value_template: "{{ value_json.waterTemp }}"
+        unit_of_measurement: "°C"
+        device_class: temperature
+      - name: GrowBox почва 1
+        unique_id: growbox_soil1
+        value_template: "{{ value_json.soil1 }}"
+        unit_of_measurement: "%"
+      - name: GrowBox почва 2
+        unique_id: growbox_soil2
+        value_template: "{{ value_json.soil2 }}"
+        unit_of_measurement: "%"
+      - name: GrowBox почва 3
+        unique_id: growbox_soil3
+        value_template: "{{ value_json.soil3 }}"
+        unit_of_measurement: "%"
+      - name: GrowBox день
+        unique_id: growbox_day
+        value_template: "{{ value_json.day }}"
+      - name: GrowBox стадия
+        unique_id: growbox_stage
+        value_template: "{{ value_json.stage }}"
+      - name: GrowBox прошивка
+        unique_id: growbox_fw
+        value_template: "{{ value_json.fw }}"
+    binary_sensor:
+      - name: GrowBox свет
+        unique_id: growbox_light
+        value_template: "{{ value_json.light == 1 }}"
+        device_class: light
+      - name: GrowBox вытяжка
+        unique_id: growbox_exhaust
+        value_template: "{{ value_json.exhaust == 1 }}"
+      - name: GrowBox обогрев
+        unique_id: growbox_heater
+        value_template: "{{ value_json.heater == 1 }}"
+      - name: GrowBox обдув
+        unique_id: growbox_fan
+        value_template: "{{ value_json.fan == 1 }}"
+      - name: GrowBox помпа
+        unique_id: growbox_pump
+        value_template: "{{ value_json.pump == 1 }}"
+      - name: GrowBox перегрев
+        unique_id: growbox_thermal
+        value_template: "{{ value_json.thermal == 1 }}"
+        device_class: problem
+
+rest_command:
+  growbox_water1:
+    url: "http://192.168.1.11/water?z=0"
+  growbox_water2:
+    url: "http://192.168.1.11/water?z=1"
+  growbox_water3:
+    url: "http://192.168.1.11/water?z=2"
+  growbox_stage_veg:
+    url: "http://192.168.1.11/setStage?s=veg"
+  growbox_stage_bloom:
+    url: "http://192.168.1.11/setStage?s=bloom"
+  growbox_stage_dry:
+    url: "http://192.168.1.11/setStage?s=dry"
+  growbox_mode:
+    url: "http://192.168.1.11/setMode?d={{ device }}&m={{ mode }}"
+  growbox_all_auto:
+    url: "http://192.168.1.11/allAuto"

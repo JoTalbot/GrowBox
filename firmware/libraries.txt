@@ -5,6 +5,7 @@ DHT sensor library
 Adafruit Unified Sensor
 OneWire
 DallasTemperature
+PubSubClient
 
 # Built-in (ESP32 core)
 # WiFi

@@ -47,7 +47,7 @@
 #define RELAY_OFF         HIGH
 
 #define WDT_TIMEOUT_SEC   45
-#define FIRMWARE_VERSION  "6.3.1"
+#define FIRMWARE_VERSION  "6.3.2"
 
 enum GrowStage {
   STAGE_VEG = 0,
@@ -209,6 +209,18 @@ String statusJson(const String& event);
 void handleSaveRemote();
 void handleRemotePull();
 void handleOtaCheck();
+void loadMqttSettings();
+void persistMqtt();
+void mqttLoop();
+void handleSaveMqtt();
+
+String mqttHost = "";
+uint16_t mqttPort = 1883;
+String mqttUser = "";
+String mqttPass = "";
+bool mqttEnabled = false;
+String lastMqttEvent = "-";
+bool mqttConnected = false;
 
 void feedWatchdog() {
   if (wdtStarted) esp_task_wdt_reset();
@@ -798,6 +810,9 @@ void handleApiData() {
   json += "\"devId\":\"" + deviceId() + "\",";
   json += "\"rEvent\":\"" + lastRemoteEvent + "\",";
   json += "\"otaRes\":\"" + lastOtaResult + "\",";
+  json += "\"mqttEn\":" + String(mqttEnabled ? 1 : 0) + ",";
+  json += "\"mqttOk\":" + String(mqttConnected ? 1 : 0) + ",";
+  json += "\"mqttEv\":\"" + lastMqttEvent + "\",";
   json += "\"watering\":" + String(activeWateringZone);
   json += "}";
   server.send(200, "application/json", json);
@@ -1007,6 +1022,22 @@ void handleRoot() {
   html += "<button type='button' class='btn btn-sec' onclick='fetch(\"/otaCheck\")'>📦 Проверить OTA</button>";
   html += "</div></form></div>";
 
+  html += "<div class='box'><h3 style='margin:0 0 8px; font-size:13px; color:#74c69d;'>🏠 Home Assistant (MQTT)</h3>";
+  html += "<div class='row'><span>MQTT</span><span id='bMqtt' class='badge off'>ВЫКЛ</span></div>";
+  html += "<div class='row'><span>Событие</span><b id='mqttEv'>-</b></div>";
+  html += "<form action='/saveMqtt' method='POST'>";
+  html += "<label class='f'>Брокер (IP или homeassistant.local)</label>";
+  html += "<input type='text' name='mqttH' value='" + mqttHost + "' placeholder='192.168.1.10'>";
+  html += "<div class='set-grid'>";
+  html += "<label class='f'>Порт<input type='number' name='mqttP' value='" + String(mqttPort) + "'></label>";
+  html += "<label class='f'>Логин<input type='text' name='mqttU' value='" + mqttUser + "'></label>";
+  html += "</div>";
+  html += "<label class='f'>Пароль</label><input type='text' name='mqttPw' value='" + mqttPass + "'>";
+  html += "<label class='f'><input type='checkbox' name='mqttEn' value='1'";
+  if (mqttEnabled) html += " checked";
+  html += "> Включить MQTT Discovery</label>";
+  html += "<button type='submit' class='btn' style='margin-top:8px;width:100%;'>💾 Сохранить MQTT</button></form></div>";
+
   html += "<div class='box'><h3 style='margin:0 0 8px; font-size:13px; color:#74c69d;'>⚙️ Telegram и защита</h3>";
   html += "<form action='/saveConfig' method='POST'>";
   html += "<label class='f'>Bot Token</label><input type='text' name='tgToken' value='" + tgBotToken + "'>";
@@ -1071,6 +1102,8 @@ void handleRoot() {
   html += "if(document.getElementById('devId')){document.getElementById('devId').innerText=d.devId||'';";
   html += "document.getElementById('rEvent').innerText=d.rEvent||'-';document.getElementById('otaRes').innerText=d.otaRes||'-';";
   html += "let br=document.getElementById('bRemote');br.className='badge '+(d.remoteEn?'on':'off');br.innerText=d.remoteEn?'ОНЛАЙН':'ВЫКЛ';}";
+  html += "if(document.getElementById('bMqtt')){let bm=document.getElementById('bMqtt');bm.className='badge '+(d.mqttOk?'on':'off');bm.innerText=d.mqttOk?'ONLINE':(d.mqttEn?'НЕТ СВЯЗИ':'ВЫКЛ');";
+  html += "document.getElementById('mqttEv').innerText=d.mqttEv||'-';}";
   html += "}).catch(e=>console.error(e));}";
   html += "function loadHistory(){fetch('/api/history').then(r=>r.json()).then(drawCharts).catch(e=>console.error(e));}";
   html += "setInterval(upd,2000);upd();setInterval(loadHistory,60000);loadHistory();";
@@ -1247,6 +1280,7 @@ void setup() {
   }
   loadSettings();
   loadRemoteSettings();
+  loadMqttSettings();
   prefs.end();
 
   dht.begin();
@@ -1285,6 +1319,7 @@ void setup() {
   server.on("/saveRemote", HTTP_POST, handleSaveRemote);
   server.on("/remotePull", handleRemotePull);
   server.on("/otaCheck", handleOtaCheck);
+  server.on("/saveMqtt", HTTP_POST, handleSaveMqtt);
 
   ElegantOTA.begin(&server);
   server.begin();
@@ -1331,6 +1366,7 @@ bool computeHumidAuto() {
 void loop() {
   feedWatchdog();
   server.handleClient();
+  mqttLoop();
   ensureCycleStart();
   performPendingOta();
 

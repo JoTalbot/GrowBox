@@ -1,5 +1,10 @@
 # Changelog
 
+## 6.3.2 — 2026-08-12
+
+- Home Assistant MQTT Discovery: датчики, режимы реле, полив, стадия
+- Пакет REST для HA без прошивки: `homeassistant/growbox.yaml`
+
 ## 6.3.1 — 2026-08-12
 
 - HTTPS **и** HTTP OTA: `httpUpdate` больше не ломается на обычном `http://`
