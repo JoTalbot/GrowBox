@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#0b100c">
   <meta http-equiv="Cache-Control" content="no-cache">
-  <title>GrowBox пульт v2</title>
+  <title>GrowBox пульт v3</title>
   <style>
     :root { --bg:#070a08; --card:#121a14; --line:#1d2a20; --ok:#52b788; --txt:#d8f3dc; --dim:#8aa392; --bad:#e76f51; --btn:#2d6a4f; }
     * { box-sizing:border-box; }
@@ -32,7 +32,7 @@
   </style>
 </head>
 <body>
-  <h1>🌿 GrowBox пульт v2</h1>
+  <h1>🌿 GrowBox пульт v3</h1>
   <div class="sub">Пульт через ntfy · без Home Assistant · работает из интернета</div>
 
   <div class="card" id="statusCard">
@@ -117,6 +117,8 @@
 
 <script>
 const $ = id => document.getElementById(id);
+let busy = false;
+let lastSent = '';
 function log(s){ const el=$('log'); el.textContent = new Date().toLocaleTimeString() + ' ' + s + '\n' + el.textContent; }
 
 function loadCfg(){
@@ -142,6 +144,11 @@ async function cmd(c, arg){
   if (arg !== undefined && arg !== '') parts.push(String(arg));
   if (x.key) parts.push(x.key);
   const body = parts.join(' ');
+  if (busy) { log('подожди, предыдущая команда ещё уходит'); return; }
+  if (body === lastSent && Date.now() - (cmd.lastAt||0) < 2500) { log('повтор пропущен'); return; }
+  busy = true;
+  lastSent = body;
+  cmd.lastAt = Date.now();
   log('→ ' + body);
   try {
     const r = await fetch('https://ntfy.sh/', {
