@@ -1,5 +1,5 @@
 {
-  "version": "6.3.1",
-  "url": "https://raw.githubusercontent.com/JoTalbot/GrowBox/main/firmware/bin/GrowBox-v6.3.1.bin",
-  "notes": "HTTP+HTTPS OTA, сравнение патч-версий. Заливка через flash / автопрошивку."
+  "version": "6.3.2",
+  "url": "https://raw.githubusercontent.com/JoTalbot/GrowBox/main/firmware/bin/GrowBox-v6.3.2.bin",
+  "notes": "Heartbeat 60s, MQTT HA, stale OTA skip, mode fields in status."
 }
