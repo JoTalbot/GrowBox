@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#0b100c">
   <meta http-equiv="Cache-Control" content="no-cache">
-  <title>GrowBox пульт v4</title>
+  <title>GrowBox пульт v5</title>
   <style>
     :root { --bg:#070a08; --card:#121a14; --line:#1d2a20; --ok:#52b788; --txt:#d8f3dc; --dim:#8aa392; --btn:#2d6a4f; }
     * { box-sizing:border-box; }
@@ -34,11 +34,12 @@
   </style>
 </head>
 <body>
-  <h1>🌿 GrowBox пульт v4</h1>
+  <h1>🌿 GrowBox пульт v5</h1>
   <div class="sub">Живой статус через ntfy · без кнопки «считать»</div>
 
   <div class="card">
     <div class="row"><span>Поток</span><span id="link" class="badge">подключение…</span></div>
+    <div class="row"><span>Сводка</span><b id="summary" style="text-align:right;font-size:12px">—</b></div>
     <div class="row"><span>Обновлено</span><b id="ago">—</b></div>
     <div class="row"><span>Прошивка</span><b id="fw">—</b></div>
     <div class="row"><span>Стадия / день</span><b id="stage">—</b></div>
@@ -123,6 +124,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
+function setTxt(id, v){ const el = $(id); if (el) el.textContent = v; }
 let busy = false, lastSent = '', lastAt = 0, lastJson = null, lastTs = 0, es = null;
 
 function log(s){
@@ -149,6 +151,7 @@ function cfg(){
 
 function pill(id, on){
   const el = $(id);
+  if (!el) return;
   el.className = 'pill' + (on ? ' on' : '');
   el.textContent = on ? 'ВКЛ' : 'ВЫКЛ';
 }
@@ -176,10 +179,10 @@ function paint(j){
   $('fw').textContent = 'v' + (j.fw || '—');
   $('stage').textContent = (j.stage || '—') + ' / день ' + (j.day ?? '—');
   const t = Number(j.temp);
-  $('temp').textContent = (isFinite(t) && t > -40) ? (t.toFixed(1) + ' °C') : 'нет DHT';
+  setTxt('temp', (isFinite(t) && t > -40) ? (t.toFixed(1) + ' °C') : 'нет DHT');
   const h = Number(j.hum), v = Number(j.vpd);
-  $('hum').textContent = (isFinite(h) && h >= 0) ? (h.toFixed(0) + '% / ' + v.toFixed(2) + ' kPa') : '—';
-  $('ip').textContent = j.ip || '—';
+  setTxt('hum', (isFinite(h) && h >= 0) ? (h.toFixed(0) + '% / ' + v.toFixed(2) + ' kPa') : '—');
+  setTxt('ip', j.ip || '—');
   pill('pLight', !!Number(j.light));
   pill('pExh', !!Number(j.exhaust));
   pill('pHeat', !!Number(j.heater));
