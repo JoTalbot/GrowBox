@@ -205,6 +205,9 @@ void performPendingOta() {
   } else {
     lastOtaResult = httpUpdate.getLastErrorString();
     lastRemoteEvent = "ota-fail";
+    prefs.begin("growbox", false);
+    prefs.putString("lastOta", "");
+    prefs.end();
     sendTelegramMessage("❌ OTA: " + lastOtaResult);
     publishRemoteStatus("ota-fail");
   }
