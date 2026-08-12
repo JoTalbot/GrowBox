@@ -2,7 +2,7 @@
 
 Прошивка ESP32 для автоматического гроубокса: климат, свет с рассветом/закатом, полив трёх зон, безопасность и дашборд.
 
-Текущая версия прошивки: **v6.1**  
+Текущая версия прошивки: **v6.2**  
 Скетч: [`firmware/Growbox_CriticalKush_V6/Growbox_CriticalKush_V6.ino`](firmware/Growbox_CriticalKush_V6/Growbox_CriticalKush_V6.ino)
 
 ## Что умеет
@@ -19,6 +19,9 @@
 - Обогрев: день 24.5 °C, ночь 20.5 °C, сушка 16 °C
 - Аварийное отключение света при 32.5 °C
 - Поплавок бака, протечка, опциональный контроль 220 V
+- Ручное управление реле: Авто / Вкл / Выкл, авто не сбивает ручной режим
+- Настройки света, климата и полива с дашборда, без перепрошивки
+- Увлажнитель по VPD (GPIO 21), защита от плесени на цветении
 - Telegram-бот, OTA, CSV за 24 часа, WiFiManager, watchdog
 
 Дашборд после подключения к Wi‑Fi:
@@ -66,6 +69,13 @@ Arduino IDE 2.x, плата **ESP32 Dev Module**, ядро Espressif 2.0+ или
 
 Открой `firmware/Growbox_CriticalKush_V6/Growbox_CriticalKush_V6.ino` и залей по USB. Дальше обновления — через `/update`.
 
+## Что нового в v6.2
+
+- На каждом реле кнопки **Авто / Вкл / Выкл**. Ручной режим пишется в NVS и переживает ребут. Термозащита света сильнее ручного «Вкл».
+- Блок «Параметры»: расписание света, температуры, полив, VPD — сохраняется без USB.
+- Увлажнитель: GPIO 21, галочка «подключён». Авто: VPD выше коридора — вкл, ниже (риск плесени) или RH ≥ 75% — выкл. На сушке молчит.
+- Telegram: `/light on|off|auto`, то же для `/exhaust` `/heat` `/fan` `/humid`, плюс `/auto` и `/settings`.
+
 ## Что исправлено в v6.1
 
 Отталкивались от файла, который сейчас залит в ESP32 (`Growbox_CriticalKush_V6`).
@@ -78,7 +88,8 @@ Arduino IDE 2.x, плата **ESP32 Dev Module**, ядро Espressif 2.0+ или
 
 ## Telegram
 
-Команды: `/status` `/photo` `/water1` `/water2` `/water3` `/veg` `/bloom` `/dry` `/resetday` `/help`
+Команды: `/status` `/photo` `/settings` `/water1` `/water2` `/water3` `/veg` `/bloom` `/dry` `/resetday` `/auto`  
+`/light on|off|auto` — так же `/exhaust` `/heat` `/fan` `/humid`
 
 Токен и Chat ID задаются внизу дашборда.
 
