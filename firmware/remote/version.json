@@ -1,5 +1,5 @@
 {
-  "version": "6.3.5",
-  "url": "https://raw.githubusercontent.com/JoTalbot/GrowBox/main/firmware/bin/GrowBox-v6.3.5.bin",
-  "notes": "LAN admin at /admin"
+  "version": "6.3.6",
+  "url": "https://raw.githubusercontent.com/JoTalbot/GrowBox/main/firmware/bin/GrowBox-v6.3.6.bin",
+  "notes": "Admin climate, water, soil calib"
 }
