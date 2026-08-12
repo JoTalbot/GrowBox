@@ -47,7 +47,7 @@
 #define RELAY_OFF         HIGH
 
 #define WDT_TIMEOUT_SEC   45
-#define FIRMWARE_VERSION  "6.3.4"
+#define FIRMWARE_VERSION  "6.3.5"
 
 enum GrowStage {
   STAGE_VEG = 0,
@@ -209,6 +209,8 @@ String statusJson(const String& event);
 void handleSaveRemote();
 void handleRemotePull();
 void handleOtaCheck();
+void handleAdmin();
+void handleReboot();
 void loadMqttSettings();
 void persistMqtt();
 void mqttLoop();
@@ -1080,7 +1082,7 @@ void handleRoot() {
   html += "<button type='button' class='btn btn-sec' onclick='fetch(\"/togglePower\")'>⚡ Датчик 220V</button>";
   html += "</div></form></div>";
 
-  html += "<div class='footer'><a href='/update'>📦 OTA /update</a> | v";
+  html += "<div class='footer'><a href='/admin'>🛠️ Админка</a> | <a href='/update'>📦 OTA</a> | v";
   html += FIRMWARE_VERSION;
   html += "</div></div>";
 
@@ -1350,6 +1352,8 @@ void setup() {
   server.on("/saveRemote", HTTP_POST, handleSaveRemote);
   server.on("/remotePull", handleRemotePull);
   server.on("/otaCheck", handleOtaCheck);
+  server.on("/admin", handleAdmin);
+  server.on("/reboot", handleReboot);
   server.on("/saveMqtt", HTTP_POST, handleSaveMqtt);
 
   ElegantOTA.begin(&server);
