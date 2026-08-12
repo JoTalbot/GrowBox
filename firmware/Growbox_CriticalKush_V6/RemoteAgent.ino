@@ -123,6 +123,10 @@ String statusJson(const String& event) {
   json += "\"fan\":" + String(stateFan ? 1 : 0) + ",";
   json += "\"humid\":" + String(stateHumid ? 1 : 0) + ",";
   json += "\"thermal\":" + String(thermalShutdown ? 1 : 0) + ",";
+  json += "\"mLight\":\"" + String(modeLight == MODE_ON ? "on" : (modeLight == MODE_OFF ? "off" : "auto")) + "\",";
+  json += "\"mExh\":\"" + String(modeExhaust == MODE_ON ? "on" : (modeExhaust == MODE_OFF ? "off" : "auto")) + "\",";
+  json += "\"mHeat\":\"" + String(modeHeater == MODE_ON ? "on" : (modeHeater == MODE_OFF ? "off" : "auto")) + "\",";
+  json += "\"mFan\":\"" + String(modeFan == MODE_ON ? "on" : (modeFan == MODE_OFF ? "off" : "auto")) + "\",";
   json += "\"ip\":\"" + WiFi.localIP().toString() + "\"";
   json += "}";
   return json;
