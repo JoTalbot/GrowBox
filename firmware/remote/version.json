@@ -1,5 +1,5 @@
 {
-  "version": "6.3.4",
-  "url": "https://raw.githubusercontent.com/JoTalbot/GrowBox/main/firmware/bin/GrowBox-v6.3.4.bin",
-  "notes": "Soil + water temp in ntfy status for phone dashboard."
+  "version": "6.3.5",
+  "url": "https://raw.githubusercontent.com/JoTalbot/GrowBox/main/firmware/bin/GrowBox-v6.3.5.bin",
+  "notes": "LAN admin at /admin"
 }
