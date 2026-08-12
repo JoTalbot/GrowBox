@@ -46,7 +46,7 @@
 #define RELAY_ON          LOW
 #define RELAY_OFF         HIGH
 
-#define WDT_TIMEOUT_SEC   8
+#define WDT_TIMEOUT_SEC   45
 #define FIRMWARE_VERSION  "6.3"
 
 enum GrowStage {
@@ -1331,7 +1331,6 @@ bool computeHumidAuto() {
 void loop() {
   feedWatchdog();
   server.handleClient();
-  ElegantOTA.loop();
   ensureCycleStart();
   performPendingOta();
 
