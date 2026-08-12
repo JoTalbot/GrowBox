@@ -59,9 +59,9 @@ String jsonGet(const String& src, const char* key) {
 }
 
 int versionCode(const String& v) {
-  int maj = 0, minor = 0;
-  sscanf(v.c_str(), "%d.%d", &maj, &minor);
-  return maj * 100 + minor;
+  int maj = 0, minor = 0, patch = 0;
+  sscanf(v.c_str(), "%d.%d.%d", &maj, &minor, &patch);
+  return maj * 10000 + minor * 100 + patch;
 }
 
 String httpsGet(const String& url, uint16_t timeoutMs = 4500) {
@@ -154,16 +154,23 @@ void performPendingOta() {
   sendTelegramMessage("📦 <b>OTA:</b> качаю " + url);
 
   feedWatchdog();
-  WiFiClientSecure client;
-  client.setInsecure();
-  client.setTimeout(15);
   httpUpdate.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   httpUpdate.rebootOnUpdate(true);
   httpUpdate.onProgress([](int cur, int total) {
     feedWatchdog();
   });
 
-  t_httpUpdate_return ret = httpUpdate.update(client, url);
+  t_httpUpdate_return ret;
+  if (url.startsWith("https://")) {
+    WiFiClientSecure client;
+    client.setInsecure();
+    client.setTimeout(20);
+    ret = httpUpdate.update(client, url);
+  } else {
+    WiFiClient client;
+    client.setTimeout(20);
+    ret = httpUpdate.update(client, url);
+  }
   if (ret == HTTP_UPDATE_OK) {
     lastOtaResult = "ok";
   } else if (ret == HTTP_UPDATE_NO_UPDATES) {

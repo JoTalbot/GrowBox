@@ -1,5 +1,12 @@
 # Changelog
 
+## 6.3.1 — 2026-08-12
+
+- HTTPS **и** HTTP OTA: `httpUpdate` больше не ломается на обычном `http://`
+- Сравнение версий учитывает патч (`6.3.1` > `6.3`)
+- CI собирает полный образ и `GrowBox-OTA-Service.bin`, на тег `v*` публикует Release
+- `remote_status.py --wait N --since 5m` — ждать ответ коробки
+
 ## 6.3-service — 2026-08-12
 
 - Тонкий загрузчик `GrowBox-OTA-Service.bin` (~773 КБ), без WDT

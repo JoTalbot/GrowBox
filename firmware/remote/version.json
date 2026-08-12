@@ -1,5 +1,5 @@
 {
   "version": "6.3",
   "url": "https://raw.githubusercontent.com/JoTalbot/GrowBox/main/firmware/bin/GrowBox-v6.3.bin",
-  "notes": "Собери через PlatformIO или скачай этот bin и залей через ElegantOTA /update."
+  "notes": "CI: Actions → Build firmware. Тег v* кладёт .bin в GitHub Release. HTTP и HTTPS OTA."
 }

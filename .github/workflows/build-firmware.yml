@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - "firmware/Growbox_CriticalKush_V6/**"
+      - "firmware/Growbox_OTA_Service/**"
       - "platformio.ini"
       - ".github/workflows/build-firmware.yml"
 
@@ -18,10 +19,35 @@ jobs:
           python-version: "3.11"
       - name: Install PlatformIO
         run: pip install -U platformio
-      - name: Build
+      - name: Build v6.3
         run: pio run -e esp32dev
+      - name: Build OTA service
+        run: pio run -d firmware/Growbox_OTA_Service -e ota_service
+      - name: Collect bins
+        run: |
+          mkdir -p dist
+          cp .pio/build/esp32dev/firmware.bin dist/GrowBox-v6.3.bin
+          cp firmware/Growbox_OTA_Service/.pio/build/ota_service/firmware.bin dist/GrowBox-OTA-Service.bin
+          ls -lh dist
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: firmware-bin
-          path: .pio/build/esp32dev/firmware.bin
+          path: dist/*.bin
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: firmware-bin
+          path: dist
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.bin
+          generate_release_notes: true
