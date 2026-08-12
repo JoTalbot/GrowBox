@@ -1,5 +1,10 @@
 # Changelog
 
+## 6.3-service — 2026-08-12
+
+- Тонкий загрузчик `GrowBox-OTA-Service.bin` (~773 КБ), без WDT
+- Двухшаговая OTA: сначала сервис через старый ElegantOTA, потом полный v6.3
+
 ## 6.3 — 2026-08-12
 
 - Удалённый агент за NAT: ntfy-команды, inbox.json, HTTPS OTA (HTTPUpdate)
