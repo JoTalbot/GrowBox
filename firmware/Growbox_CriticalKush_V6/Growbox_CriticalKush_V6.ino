@@ -47,7 +47,7 @@
 #define RELAY_OFF         HIGH
 
 #define WDT_TIMEOUT_SEC   45
-#define FIRMWARE_VERSION  "6.3.5"
+#define FIRMWARE_VERSION  "6.3.6"
 
 enum GrowStage {
   STAGE_VEG = 0,
@@ -1271,9 +1271,13 @@ void handleSaveSettings() {
   vpdBloomMax = argF("vpdBmax", vpdBloomMax, 0.3, 3.0);
   if (vpdVegMax < vpdVegMin) vpdVegMax = vpdVegMin + 0.1;
   if (vpdBloomMax < vpdBloomMin) vpdBloomMax = vpdBloomMin + 0.1;
-  enableHumidifier = server.hasArg("humidEn");
+  if (server.hasArg("clim")) enableHumidifier = server.hasArg("humidEn");
   persistSettings();
-  server.sendHeader("Location", "/");
+  if (server.hasArg("next") && server.arg("next") == "admin") {
+    server.sendHeader("Location", "/admin");
+  } else {
+    server.sendHeader("Location", "/");
+  }
   server.send(303);
 }
 
