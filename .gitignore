@@ -2,6 +2,8 @@
 .env
 .env.*
 !.env.example
+.remote.env
+firmware/remote/.secret*
 *.pem
 *.key
 secrets/

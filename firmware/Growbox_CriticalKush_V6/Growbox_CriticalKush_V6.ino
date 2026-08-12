@@ -5,6 +5,8 @@
 #include <ESPmDNS.h>
 #include <Preferences.h>
 #include <WiFiClientSecure.h>
+#include <HTTPClient.h>
+#include <HTTPUpdate.h>
 #include <esp_task_wdt.h>
 #include "time.h"
 #include <DHT.h>
@@ -45,7 +47,7 @@
 #define RELAY_OFF         HIGH
 
 #define WDT_TIMEOUT_SEC   8
-#define FIRMWARE_VERSION  "6.2"
+#define FIRMWARE_VERSION  "6.3"
 
 enum GrowStage {
   STAGE_VEG = 0,
@@ -175,6 +177,38 @@ unsigned long windTimer = 0;
 bool windState = true;
 unsigned long dryVentTimer = 0;
 bool dryVentState = false;
+
+// Удалённый агент (исходящие HTTPS, NAT не нужен)
+String ntfyTopic = "";
+String remoteKey = "";
+String versionUrl = "https://raw.githubusercontent.com/JoTalbot/GrowBox/main/firmware/remote/version.json";
+String inboxUrl = "";
+bool remoteEnabled = false;
+bool autoOta = false;
+String lastRemoteEvent = "-";
+String lastOtaResult = "-";
+unsigned long lastRemotePoll = 0;
+unsigned long lastRemoteHeartbeat = 0;
+const unsigned long REMOTE_POLL_MS = 25000;
+const unsigned long REMOTE_HEARTBEAT_MS = 10UL * 60UL * 1000UL;
+String lastNtfySince = "5m";
+long lastInboxId = 0;
+bool otaPending = false;
+String otaPendingUrl = "";
+
+void persistRemote();
+void loadRemoteSettings();
+void pollRemoteAgent();
+void publishRemoteStatus(const String& event);
+void requestOta(const String& url);
+void performPendingOta();
+void executeRemoteCommand(const String& cmd, const String& arg, const String& key);
+void checkVersionFile(bool flashIfNewer);
+String deviceId();
+String statusJson(const String& event);
+void handleSaveRemote();
+void handleRemotePull();
+void handleOtaCheck();
 
 void feedWatchdog() {
   if (wdtStarted) esp_task_wdt_reset();
@@ -481,7 +515,28 @@ bool applyTelegramMode(const String& cmd, const char* prefix, const char* dev, c
 
 void handleTelegramCommand(String cmd) {
   cmd.trim();
+  String original = cmd;
   cmd.toLowerCase();
+
+  if (cmd.startsWith("/ota http")) {
+    requestOta(original.substring(5));
+    sendTelegramMessage("📦 OTA поставлена в очередь");
+    return;
+  }
+  if (cmd.startsWith("/ntfy ")) {
+    ntfyTopic = original.substring(6);
+    ntfyTopic.trim();
+    persistRemote();
+    sendTelegramMessage("🛰️ ntfy-топик сохранён");
+    return;
+  }
+  if (cmd.startsWith("/remotekey ")) {
+    remoteKey = original.substring(11);
+    remoteKey.trim();
+    persistRemote();
+    sendTelegramMessage("🔑 Ключ агента сохранён");
+    return;
+  }
 
   if (cmd == "/start" || cmd == "/help") {
     String helpMsg = "🌿 <b>Команды GrowBox Enterprise v";
@@ -492,7 +547,10 @@ void handleTelegramCommand(String cmd) {
     helpMsg += "/veg /bloom /dry /resetday\n";
     helpMsg += "/light on|off|auto\n";
     helpMsg += "/exhaust /heat /fan /humid on|off|auto\n";
-    helpMsg += "/auto — все реле обратно в авто";
+    helpMsg += "/auto — все реле обратно в авто\n";
+    helpMsg += "/remoteon /remoteoff /pull /otacheck\n";
+    helpMsg += "/ota &lt;url&gt; /ntfy &lt;topic&gt; /remotekey &lt;key&gt;\n";
+    helpMsg += "/reboot";
     sendTelegramMessage(helpMsg);
   }
   else if (cmd == "/photo") {
@@ -573,6 +631,28 @@ void handleTelegramCommand(String cmd) {
   else if (cmd == "/auto") {
     allAuto();
     sendTelegramMessage("🔄 Все реле переведены в <b>АВТО</b>");
+  }
+  else if (cmd == "/remoteon") {
+    remoteEnabled = true;
+    persistRemote();
+    sendTelegramMessage("🛰️ Удалённый канал <b>включён</b>");
+  }
+  else if (cmd == "/remoteoff") {
+    remoteEnabled = false;
+    persistRemote();
+    sendTelegramMessage("🛰️ Удалённый канал выключен");
+  }
+  else if (cmd == "/pull") {
+    lastRemotePoll = 0;
+    sendTelegramMessage("📥 Форсирую опрос канала");
+  }
+  else if (cmd == "/otacheck") {
+    executeRemoteCommand("checkota", "", remoteKey);
+  }
+  else if (cmd == "/reboot") {
+    sendTelegramMessage("🔁 Ребут...");
+    delay(300);
+    ESP.restart();
   }
   else if (applyTelegramMode(cmd, "/light", "light", "Свет")) {}
   else if (applyTelegramMode(cmd, "/exhaust", "exhaust", "Вытяжка")) {}
@@ -712,6 +792,12 @@ void handleApiData() {
   json += "\"fw\":\"" + String(FIRMWARE_VERSION) + "\",";
   json += "\"vpdMin\":" + String(vmin, 2) + ",";
   json += "\"vpdMax\":" + String(vmax, 2) + ",";
+  json += "\"remoteEn\":" + String(remoteEnabled ? 1 : 0) + ",";
+  json += "\"autoOta\":" + String(autoOta ? 1 : 0) + ",";
+  json += "\"ntfyOn\":" + String(ntfyTopic.length() > 4 ? 1 : 0) + ",";
+  json += "\"devId\":\"" + deviceId() + "\",";
+  json += "\"rEvent\":\"" + lastRemoteEvent + "\",";
+  json += "\"otaRes\":\"" + lastOtaResult + "\",";
   json += "\"watering\":" + String(activeWateringZone);
   json += "}";
   server.send(200, "application/json", json);
@@ -895,6 +981,32 @@ void handleRoot() {
   html += "> Увлажнитель подключён (GPIO 21, отдельное реле)</label>";
   html += "<button type='submit' class='btn' style='margin-top:8px;width:100%;'>💾 Сохранить параметры</button></form></div>";
 
+  html += "<div class='box'><h3 style='margin:0 0 8px; font-size:13px; color:#74c69d;'>🛰️ Удалённый агент (за NAT)</h3>";
+  html += "<div class='row'><span>Device ID</span><b id='devId'>...</b></div>";
+  html += "<div class='row'><span>Канал</span><span id='bRemote' class='badge off'>ВЫКЛ</span></div>";
+  html += "<div class='row'><span>Последнее:</span><b id='rEvent'>-</b></div>";
+  html += "<div class='row'><span>OTA:</span><b id='otaRes'>-</b></div>";
+  html += "<form action='/saveRemote' method='POST'>";
+  html += "<label class='f'>ntfy-топик (секрет)</label>";
+  html += "<input type='text' name='ntfy' value='" + ntfyTopic + "' placeholder='gb-ck-........'>";
+  html += "<label class='f'>Ключ команд</label>";
+  html += "<input type='text' name='rkey' value='" + remoteKey + "'>";
+  html += "<label class='f'>URL version.json</label>";
+  html += "<input type='text' name='verUrl' value='" + versionUrl + "'>";
+  html += "<label class='f'>URL inbox.json (необязательно)</label>";
+  html += "<input type='text' name='inboxUrl' value='" + inboxUrl + "'>";
+  html += "<label class='f'><input type='checkbox' name='remEn' value='1'";
+  if (remoteEnabled) html += " checked";
+  html += "> Включить опрос канала</label>";
+  html += "<label class='f'><input type='checkbox' name='autoOta' value='1'";
+  if (autoOta) html += " checked";
+  html += "> Автопрошивка, если version.json новее</label>";
+  html += "<div class='btn-grid' style='margin-top:8px;'>";
+  html += "<button type='submit' class='btn'>💾 Сохранить канал</button>";
+  html += "<button type='button' class='btn btn-sec' onclick='fetch(\"/remotePull\")'>📥 Проверить сейчас</button>";
+  html += "<button type='button' class='btn btn-sec' onclick='fetch(\"/otaCheck\")'>📦 Проверить OTA</button>";
+  html += "</div></form></div>";
+
   html += "<div class='box'><h3 style='margin:0 0 8px; font-size:13px; color:#74c69d;'>⚙️ Telegram и защита</h3>";
   html += "<form action='/saveConfig' method='POST'>";
   html += "<label class='f'>Bot Token</label><input type='text' name='tgToken' value='" + tgBotToken + "'>";
@@ -956,6 +1068,9 @@ void handleRoot() {
   html += "modeBtns('mdHeat','heater',d.mHeat);modeBtns('mdFan','fan',d.mFan);modeBtns('mdHumid','humid',d.mHumid);";
   html += "document.getElementById('vStat').innerText='['+(d.v1?'1':'0')+', '+(d.v2?'1':'0')+', '+(d.v3?'1':'0')+']';";
   html += "document.getElementById('wProg').innerText=d.watering>=0?('⏳ Полив зоны #'+(d.watering+1)+'...'):'';";
+  html += "if(document.getElementById('devId')){document.getElementById('devId').innerText=d.devId||'';";
+  html += "document.getElementById('rEvent').innerText=d.rEvent||'-';document.getElementById('otaRes').innerText=d.otaRes||'-';";
+  html += "let br=document.getElementById('bRemote');br.className='badge '+(d.remoteEn?'on':'off');br.innerText=d.remoteEn?'ОНЛАЙН':'ВЫКЛ';}";
   html += "}).catch(e=>console.error(e));}";
   html += "function loadHistory(){fetch('/api/history').then(r=>r.json()).then(drawCharts).catch(e=>console.error(e));}";
   html += "setInterval(upd,2000);upd();setInterval(loadHistory,60000);loadHistory();";
@@ -1131,6 +1246,7 @@ void setup() {
     lastWateredUnix[i] = prefs.getULong((String("wunix") + i).c_str(), 0);
   }
   loadSettings();
+  loadRemoteSettings();
   prefs.end();
 
   dht.begin();
@@ -1166,6 +1282,9 @@ void setup() {
   server.on("/calib", handleCalib);
   server.on("/saveConfig", HTTP_POST, handleSaveConfig);
   server.on("/saveSettings", HTTP_POST, handleSaveSettings);
+  server.on("/saveRemote", HTTP_POST, handleSaveRemote);
+  server.on("/remotePull", handleRemotePull);
+  server.on("/otaCheck", handleOtaCheck);
 
   ElegantOTA.begin(&server);
   server.begin();
@@ -1214,8 +1333,19 @@ void loop() {
   server.handleClient();
   ElegantOTA.loop();
   ensureCycleStart();
+  performPendingOta();
 
   unsigned long currentMillis = millis();
+  if (remoteEnabled && (currentMillis - lastRemotePoll >= REMOTE_POLL_MS || lastRemotePoll == 0)) {
+    lastRemotePoll = currentMillis;
+    pollRemoteAgent();
+  }
+  if (remoteEnabled && ntfyTopic.length() > 4 &&
+      (currentMillis - lastRemoteHeartbeat >= REMOTE_HEARTBEAT_MS || lastRemoteHeartbeat == 0)) {
+    lastRemoteHeartbeat = currentMillis;
+    publishRemoteStatus("heartbeat");
+    if (autoOta) checkVersionFile(true);
+  }
 
   if (currentMillis - lastSensorRead >= SENSOR_INTERVAL) {
     lastSensorRead = currentMillis;

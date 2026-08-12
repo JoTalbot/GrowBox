@@ -1,0 +1,27 @@
+name: Build firmware
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "firmware/Growbox_CriticalKush_V6/**"
+      - "platformio.ini"
+      - ".github/workflows/build-firmware.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install PlatformIO
+        run: pip install -U platformio
+      - name: Build
+        run: pio run -e esp32dev
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-bin
+          path: .pio/build/esp32dev/firmware.bin

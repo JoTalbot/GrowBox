@@ -2,7 +2,7 @@
 
 Прошивка ESP32 для автоматического гроубокса: климат, свет с рассветом/закатом, полив трёх зон, безопасность и дашборд.
 
-Текущая версия прошивки: **v6.2**  
+Текущая версия прошивки: **v6.3**  
 Скетч: [`firmware/Growbox_CriticalKush_V6/Growbox_CriticalKush_V6.ino`](firmware/Growbox_CriticalKush_V6/Growbox_CriticalKush_V6.ino)
 
 ## Что умеет
@@ -68,6 +68,24 @@ Arduino IDE 2.x, плата **ESP32 Dev Module**, ядро Espressif 2.0+ или
 Список: [firmware/libraries.txt](firmware/libraries.txt).
 
 Открой `firmware/Growbox_CriticalKush_V6/Growbox_CriticalKush_V6.ino` и залей по USB. Дальше обновления — через `/update`.
+
+## Удалённый агент за NAT
+
+Входящий порт на ESP32 с улицы не открыть. Коробка сама ходит наружу:
+
+- команды и телеметрия через [ntfy.sh](https://ntfy.sh)
+- OTA: агент кладёт `.bin` на HTTPS и шлёт `ota <url>`
+- либо `version.json` + команда `flash` / автопрошивка
+
+Как включить и слать команды: [firmware/remote/README.md](firmware/remote/README.md).  
+Скрипты: `tools/remote_cmd.py`, `tools/remote_status.py`.  
+Сборка `.bin`: GitHub Actions → **Build firmware**.
+
+## Что нового в v6.3
+
+- Исходящий канал для внешнего агента (ntfy + inbox.json + HTTPS OTA)
+- Telegram: `/ota` `/ntfy` `/remotekey` `/remoteon` `/pull` `/otacheck` `/reboot`
+- PlatformIO + workflow сборки `firmware.bin`
 
 ## Что нового в v6.2
 

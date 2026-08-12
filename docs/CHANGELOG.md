@@ -1,5 +1,12 @@
 # Changelog
 
+## 6.3 — 2026-08-12
+
+- Удалённый агент за NAT: ntfy-команды, inbox.json, HTTPS OTA (HTTPUpdate)
+- Heartbeat и статус наружу, Device ID на дашборде
+- Telegram-настройка канала без локального UI
+- PlatformIO и GitHub Actions для сборки firmware.bin
+
 ## 6.2 — 2026-08-12
 
 - Ручной режим Авто/Вкл/Выкл для света, вытяжки, обогрева, обдува и увлажнителя

@@ -1,0 +1,5 @@
+{
+  "version": "6.3",
+  "url": "",
+  "notes": "Собери firmware.bin через GitHub Actions (Build firmware) или PlatformIO и пропиши url. Пустой url = только проверка версии."
+}
