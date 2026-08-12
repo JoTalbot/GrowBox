@@ -143,16 +143,21 @@ async function cmd(c, arg){
   const body = parts.join(' ');
   log('→ ' + body);
   try {
-    const r = await fetch('https://ntfy.sh/' + encodeURIComponent(x.topic), {
+    const r = await fetch('https://ntfy.sh/', {
       method:'POST',
-      headers:{ 'Title':'cmd', 'Tags':'robot', 'Content-Type':'text/plain' },
-      body
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ topic:x.topic, message:body, title:'cmd', tags:['robot'] })
     });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    log('отправлено, жду коробку…');
-    setTimeout(() => poll(false), 8000);
-    setTimeout(() => poll(false), 20000);
-  } catch (e) { log('ошибка: ' + e.message); }
+    const txt = await r.text();
+    if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + txt.slice(0,80));
+    log('ntfy принял команду, жду коробку до 40 сек…');
+    const t0 = Date.now();
+    const tick = async () => {
+      await poll(false);
+      if (Date.now() - t0 < 40000) setTimeout(tick, 4000);
+    };
+    setTimeout(tick, 3000);
+  } catch (e) { log('ошибка отправки: ' + e.message); }
 }
 
 function paint(j){
