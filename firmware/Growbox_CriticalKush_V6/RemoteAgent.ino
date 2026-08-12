@@ -17,6 +17,7 @@ void persistRemote() {
   prefs.putBool("remEn", remoteEnabled);
   prefs.putBool("autoOta", autoOta);
   prefs.putLong("inboxId", lastInboxId);
+  prefs.putString("ntfySince", lastNtfySince);
   prefs.end();
 }
 
@@ -29,6 +30,8 @@ void loadRemoteSettings() {
   remoteEnabled = prefs.getBool("remEn", remoteEnabled);
   autoOta = prefs.getBool("autoOta", autoOta);
   lastInboxId = prefs.getLong("inboxId", lastInboxId);
+  String ns = prefs.getString("ntfySince", "");
+  if (ns.length() > 2) lastNtfySince = ns;
 }
 
 String jsonGet(const String& src, const char* key) {
