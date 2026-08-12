@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#0b100c">
   <meta http-equiv="Cache-Control" content="no-cache">
-  <title>GrowBox пульт v6</title>
+  <title>GrowBox пульт v7</title>
   <style>
     :root { --bg:#070a08; --card:#121a14; --line:#1d2a20; --ok:#52b788; --txt:#d8f3dc; --dim:#8aa392; --btn:#2d6a4f; }
     * { box-sizing:border-box; }
@@ -37,7 +37,7 @@
   </style>
 </head>
 <body>
-  <h1>🌿 GrowBox пульт v6</h1>
+  <h1>🌿 GrowBox пульт v7</h1>
   <div class="sub">Почва, день, график · живой ntfy</div>
 
   <div class="card">
@@ -73,9 +73,9 @@
   <div class="card">
     <b>Полив</b>
     <div class="grid">
-      <button onclick="cmd('water','0')">💧 #1</button>
-      <button onclick="cmd('water','1')">💧 #2</button>
-      <button onclick="cmd('water','2')">💧 #3</button>
+      <button onclick="if(confirm('Полить горшок 1?'))cmd('water','0')">💧 #1</button>
+      <button onclick="if(confirm('Полить горшок 2?'))cmd('water','1')">💧 #2</button>
+      <button onclick="if(confirm('Полить горшок 3?'))cmd('water','2')">💧 #3</button>
     </div>
   </div>
 

@@ -47,7 +47,7 @@
 #define RELAY_OFF         HIGH
 
 #define WDT_TIMEOUT_SEC   45
-#define FIRMWARE_VERSION  "6.3.8"
+#define FIRMWARE_VERSION  "6.3.9"
 
 enum GrowStage {
   STAGE_VEG = 0,
@@ -954,9 +954,9 @@ void handleRoot() {
   html += "<div style='margin-bottom:5px;'><div class='row'><span>Горшок #2:</span><b id='s2V'>--%</b></div><div class='bar-bg'><div id='s2B' class='bar-fill'></div></div></div>";
   html += "<div style='margin-bottom:5px;'><div class='row'><span>Горшок #3:</span><b id='s3V'>--%</b></div><div class='bar-bg'><div id='s3B' class='bar-fill'></div></div></div>";
   html += "<div class='btn-grid' style='grid-template-columns: 1fr 1fr 1fr;'>";
-  html += "<button class='btn btn-w' onclick='fetch(\"/water?z=0\")'>💧 #1</button>";
-  html += "<button class='btn btn-w' onclick='fetch(\"/water?z=1\")'>💧 #2</button>";
-  html += "<button class='btn btn-w' onclick='fetch(\"/water?z=2\")'>💧 #3</button></div></div>";
+  html += "<button class='btn btn-w' onclick='if(confirm(\"Полить #1?\"))fetch(\"/water?z=0\")'>💧 #1</button>";
+  html += "<button class='btn btn-w' onclick='if(confirm(\"Полить #2?\"))fetch(\"/water?z=1\")'>💧 #2</button>";
+  html += "<button class='btn btn-w' onclick='if(confirm(\"Полить #3?\"))fetch(\"/water?z=2\")'>💧 #3</button></div></div>";
 
   html += "<div class='card'><div class='card-t'><span>⚡ Оборудование</span><button class='btn-cal' onclick='fetch(\"/allAuto\")'>Все в авто</button></div>";
   html += "<div class='row'><span>💡 Свет</span><span id='bLight' class='badge off'>ВЫКЛ</span></div>";
@@ -1000,33 +1000,9 @@ void handleRoot() {
   }
   html += "</div>";
 
-  html += "<div class='box'><h3 style='margin:0 0 8px; font-size:13px; color:#74c69d;'>🎛️ Параметры (без перепрошивки)</h3>";
-  html += "<form action='/saveSettings' method='POST'><div class='set-grid'>";
-  html += "<label class='f'>Вега старт, ч<input type='number' name='vegH0' min='0' max='23' value='" + String(vegStartHour) + "'></label>";
-  html += "<label class='f'>Вега стоп, ч (24=00:00)<input type='number' name='vegH1' min='1' max='24' value='" + String(vegEndHour) + "'></label>";
-  html += "<label class='f'>Цвет старт, ч<input type='number' name='blmH0' min='0' max='23' value='" + String(bloomStartHour) + "'></label>";
-  html += "<label class='f'>Цвет стоп, ч<input type='number' name='blmH1' min='1' max='24' value='" + String(bloomEndHour) + "'></label>";
-  html += "<label class='f'>Рассвет/закат, мин<input type='number' name='sunrise' min='0' max='120' value='" + String(sunriseMin) + "'></label>";
-  html += "<label class='f'>Полив, сек<input type='number' name='waterSec' min='1' max='120' value='" + String(wateringDurationMs / 1000) + "'></label>";
-  html += "<label class='f'>Порог почвы %<input type='number' name='soilDry' min='5' max='80' value='" + String(soilDryThreshold) + "'></label>";
-  html += "<label class='f'>Soak, мин<input type='number' name='soakMin' min='5' max='240' value='" + String(soilSoakDelayMs / 60000) + "'></label>";
-  html += "<label class='f'>Резерв полива, ч<input type='number' name='fbHours' min='6' max='72' value='" + String(fallbackWateringMs / 3600000UL) + "'></label>";
-  html += "<label class='f'>Обдув вкл, мин<input type='number' name='windOn' min='1' max='60' value='" + String(windOnMs / 60000) + "'></label>";
-  html += "<label class='f'>Обдув пауза, мин<input type='number' name='windOff' min='1' max='60' value='" + String(windOffMs / 60000) + "'></label>";
-  html += "<label class='f'>Темп день °C<input type='number' step='0.1' name='tDay' value='" + String(tempTargetDay, 1) + "'></label>";
-  html += "<label class='f'>Темп ночь °C<input type='number' step='0.1' name='tNight' value='" + String(tempTargetNight, 1) + "'></label>";
-  html += "<label class='f'>Темп сушка °C<input type='number' step='0.1' name='tDry' value='" + String(tempTargetDry, 1) + "'></label>";
-  html += "<label class='f'>Гистерезис °C<input type='number' step='0.1' name='tHyst' value='" + String(tempHysteresis, 1) + "'></label>";
-  html += "<label class='f'>Авария °C<input type='number' step='0.1' name='tEmerg' value='" + String(tempEmergency, 1) + "'></label>";
-  html += "<label class='f'>VPD вега min<input type='number' step='0.05' name='vpdVmin' value='" + String(vpdVegMin, 2) + "'></label>";
-  html += "<label class='f'>VPD вега max<input type='number' step='0.05' name='vpdVmax' value='" + String(vpdVegMax, 2) + "'></label>";
-  html += "<label class='f'>VPD цвет min<input type='number' step='0.05' name='vpdBmin' value='" + String(vpdBloomMin, 2) + "'></label>";
-  html += "<label class='f'>VPD цвет max<input type='number' step='0.05' name='vpdBmax' value='" + String(vpdBloomMax, 2) + "'></label>";
-  html += "</div>";
-  html += "<label class='f' style='margin-top:8px;'><input type='checkbox' name='humidEn' value='1'";
-  if (enableHumidifier) html += " checked";
-  html += "> Увлажнитель подключён (GPIO 21, отдельное реле)</label>";
-  html += "<button type='submit' class='btn' style='margin-top:8px;width:100%;'>💾 Сохранить параметры</button></form></div>";
+  html += "<div class='box'><h3 style='margin:0 0 8px; font-size:13px; color:#74c69d;'>🎛️ Параметры</h3>";
+  html += "<p style='font-size:12px;color:#9aaf9e;margin:0 0 8px;'>Климат, полив и калибровка — в админке (меньше прошивка, стабильнее OTA).</p>";
+  html += "<a class='btn' href='/admin'>Открыть админку</a></div>";
 
   html += "<div class='box'><h3 style='margin:0 0 8px; font-size:13px; color:#74c69d;'>🛰️ Удалённый агент (за NAT)</h3>";
   html += "<div class='row'><span>Device ID</span><b id='devId'>...</b></div>";

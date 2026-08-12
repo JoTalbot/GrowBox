@@ -88,9 +88,9 @@ void handleAdmin() {
   adminNum(html, "Soak мин", "soakMin", String(soilSoakDelayMs / 60000));
   adminNum(html, "Резерв ч", "fbHours", String(fallbackWateringMs / 3600000UL));
   html += "</div><button>Сохранить полив</button></form>";
-  html += "<button onclick=\"fetch('/water?z=0')\">💧1</button>";
-  html += "<button onclick=\"fetch('/water?z=1')\">💧2</button>";
-  html += "<button onclick=\"fetch('/water?z=2')\">💧3</button>";
+  html += "<button onclick=\"if(confirm('Полить зону 1?'))fetch('/water?z=0')\">💧1</button>";
+  html += "<button onclick=\"if(confirm('Полить зону 2?'))fetch('/water?z=1')\">💧2</button>";
+  html += "<button onclick=\"if(confirm('Полить зону 3?'))fetch('/water?z=2')\">💧3</button>";
   html += "<button class=s onclick=\"fetch('/setStage?s=veg')\">Вега</button>";
   html += "<button class=s onclick=\"fetch('/setStage?s=bloom')\">Цвет</button>";
   html += "<button class=s onclick=\"fetch('/setStage?s=dry')\">Сушка</button></div>";

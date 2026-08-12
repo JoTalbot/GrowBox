@@ -51,7 +51,7 @@
 | Протечка | 14 | к GND, INPUT_PULLUP |
 | Контроль 220 V | 33 | оптопара к GND |
 
-Подробности: [docs/WIRING.md](docs/WIRING.md).
+Подробности: [docs/WIRING.md](docs/WIRING.md). Камера OV7670: [docs/CAMERA_OV7670.md](docs/CAMERA_OV7670.md).
 
 ## Сборка
 
