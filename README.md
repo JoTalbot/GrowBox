@@ -29,6 +29,7 @@
 - http://growbox.local
 - или IP контроллера в локальной сети
 - OTA: http://growbox.local/update
+- пульт с телефона из интернета: [phone/index.html](phone/index.html) (ntfy, без HA)
 
 Первый запуск без сохранённой сети поднимает точку `Growbox-Setup` / пароль `12345678`.
 

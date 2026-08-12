@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0b100c">
+  <title>GrowBox пульт</title>
+  <style>
+    :root { --bg:#070a08; --card:#121a14; --line:#1d2a20; --ok:#52b788; --txt:#d8f3dc; --dim:#8aa392; --bad:#e76f51; --btn:#2d6a4f; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:-apple-system,system-ui,sans-serif; background:var(--bg); color:var(--txt); padding:12px 12px 28px; }
+    h1 { font-size:20px; margin:4px 0 2px; color:var(--ok); }
+    .sub { color:var(--dim); font-size:12px; margin-bottom:12px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; margin:0 0 10px; }
+    .row { display:flex; justify-content:space-between; gap:8px; margin:5px 0; font-size:14px; }
+    .big { font-size:22px; font-weight:800; }
+    .badge { font-size:10px; font-weight:700; padding:3px 7px; border-radius:5px; background:#49111c; color:#ffb4a2; }
+    .badge.on { background:#1b4332; color:#95d5b2; }
+    label { display:block; font-size:12px; color:var(--dim); margin:8px 0 4px; }
+    input { width:100%; background:#151d17; border:1px solid #253328; color:#fff; padding:10px; border-radius:8px; font-size:16px; }
+    button { border:0; border-radius:8px; padding:10px 8px; font-weight:700; background:var(--btn); color:#fff; font-size:13px; }
+    button.sec { background:#18201a; border:1px solid #253328; }
+    button.warn { background:#9d0208; }
+    .grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-top:8px; }
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px; }
+    .modes { display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; margin:4px 0 10px; }
+    .modes button { background:#18201a; border:1px solid #253328; font-size:11px; padding:8px 4px; }
+    .log { font-size:11px; color:var(--dim); white-space:pre-wrap; max-height:120px; overflow:auto; }
+    a { color:var(--ok); }
+  </style>
+</head>
+<body>
+  <h1>🌿 GrowBox</h1>
+  <div class="sub">Пульт через ntfy · без Home Assistant · работает из интернета</div>
+
+  <div class="card" id="statusCard">
+    <div class="row"><span>Связь</span><span id="link" class="badge">нет данных</span></div>
+    <div class="row"><span>Прошивка</span><b id="fw">—</b></div>
+    <div class="row"><span>Стадия / день</span><b id="stage">—</b></div>
+    <div class="row"><span>Воздух</span><span class="big" id="temp">—</span></div>
+    <div class="row"><span>RH / VPD</span><b id="hum">—</b></div>
+    <div class="row"><span>IP</span><b id="ip">—</b></div>
+    <div class="row"><span>Свет / вытяжка / обдув</span><b id="relays">—</b></div>
+    <div class="grid2">
+      <button class="sec" onclick="cmd('ping')">📡 Ping</button>
+      <button class="sec" onclick="cmd('status')">🔄 Статус</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <b>Стадия</b>
+    <div class="grid">
+      <button onclick="cmd('stage','veg')">🌱 Вега</button>
+      <button onclick="cmd('stage','bloom')">🌸 Цвет</button>
+      <button onclick="cmd('stage','dry')">🍂 Сушка</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <b>Полив</b>
+    <div class="grid">
+      <button onclick="cmd('water','0')">💧 #1</button>
+      <button onclick="cmd('water','1')">💧 #2</button>
+      <button onclick="cmd('water','2')">💧 #3</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <b>Реле</b>
+    <div>Свет</div>
+    <div class="modes">
+      <button onclick="cmd('mode','light:auto')">Авто</button>
+      <button onclick="cmd('mode','light:on')">Вкл</button>
+      <button onclick="cmd('mode','light:off')">Выкл</button>
+    </div>
+    <div>Вытяжка</div>
+    <div class="modes">
+      <button onclick="cmd('mode','exhaust:auto')">Авто</button>
+      <button onclick="cmd('mode','exhaust:on')">Вкл</button>
+      <button onclick="cmd('mode','exhaust:off')">Выкл</button>
+    </div>
+    <div>Обогрев</div>
+    <div class="modes">
+      <button onclick="cmd('mode','heater:auto')">Авто</button>
+      <button onclick="cmd('mode','heater:on')">Вкл</button>
+      <button onclick="cmd('mode','heater:off')">Выкл</button>
+    </div>
+    <div>Обдув</div>
+    <div class="modes">
+      <button onclick="cmd('mode','fan:auto')">Авто</button>
+      <button onclick="cmd('mode','fan:on')">Вкл</button>
+      <button onclick="cmd('mode','fan:off')">Выкл</button>
+    </div>
+    <div class="grid2">
+      <button onclick="cmd('auto')">Все в авто</button>
+      <button class="warn" onclick="if(confirm('Ребут коробки?'))cmd('reboot')">Ребут</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <b>Секрет канала</b>
+    <p class="sub" style="margin:6px 0">Те же топик и ключ, что на дашборде коробки. Хранятся только в этом телефоне.</p>
+    <label>ntfy-топик</label>
+    <input id="topic" autocomplete="off" spellcheck="false">
+    <label>Ключ команд</label>
+    <input id="key" autocomplete="off" spellcheck="false">
+    <div class="grid2">
+      <button onclick="saveCfg()">💾 Сохранить</button>
+      <button class="sec" onclick="poll(true)">Считать статусы</button>
+    </div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <p class="sub">Добавь на домашний экран: «Поделиться → На экран Домой». Ответ коробки — до ~25 сек (её опрос ntfy).</p>
+
+<script>
+const $ = id => document.getElementById(id);
+function log(s){ const el=$('log'); el.textContent = new Date().toLocaleTimeString() + ' ' + s + '\n' + el.textContent; }
+
+function loadCfg(){
+  $('topic').value = localStorage.getItem('gb_topic') || '';
+  $('key').value = localStorage.getItem('gb_key') || '';
+}
+function saveCfg(){
+  localStorage.setItem('gb_topic', $('topic').value.trim());
+  localStorage.setItem('gb_key', $('key').value.trim());
+  log('сохранено на телефоне');
+}
+
+function cfg(){
+  const topic = ($('topic').value || localStorage.getItem('gb_topic') || '').trim();
+  const key = ($('key').value || localStorage.getItem('gb_key') || '').trim();
+  if (topic.length < 5) { alert('Впиши ntfy-топик'); return null; }
+  return { topic, key };
+}
+
+async function cmd(c, arg){
+  const x = cfg(); if (!x) return;
+  const parts = [c];
+  if (arg !== undefined && arg !== '') parts.push(String(arg));
+  if (x.key) parts.push(x.key);
+  const body = parts.join(' ');
+  log('→ ' + body);
+  try {
+    const r = await fetch('https://ntfy.sh/' + encodeURIComponent(x.topic), {
+      method:'POST',
+      headers:{ 'Title':'cmd', 'Tags':'robot', 'Content-Type':'text/plain' },
+      body
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    log('отправлено, жду коробку…');
+    setTimeout(() => poll(false), 8000);
+    setTimeout(() => poll(false), 20000);
+  } catch (e) { log('ошибка: ' + e.message); }
+}
+
+function paint(j){
+  $('link').textContent = j.event || 'ok';
+  $('link').className = 'badge on';
+  $('fw').textContent = 'v' + (j.fw || '—');
+  $('stage').textContent = (j.stage || '—') + ' / день ' + (j.day ?? '—');
+  const t = Number(j.temp);
+  $('temp').textContent = (isFinite(t) && t > -40) ? (t.toFixed(1) + ' °C') : 'нет DHT';
+  const h = Number(j.hum), v = Number(j.vpd);
+  $('hum').textContent = (isFinite(h) && h >= 0) ? (h.toFixed(0) + '% / ' + v.toFixed(2) + ' kPa') : '—';
+  $('ip').textContent = j.ip || '—';
+  const on = n => n ? 'вкл' : 'выкл';
+  $('relays').textContent = on(j.light) + ' / ' + on(j.exhaust) + ' / ' + on(j.fan);
+}
+
+async function poll(force){
+  const x = cfg(); if (!x) return;
+  try {
+    const r = await fetch('https://ntfy.sh/' + encodeURIComponent(x.topic) + '/json?poll=1&since=6h');
+    const raw = await r.text();
+    let last = null;
+    for (const line of raw.split('\n')) {
+      if (!line.trim()) continue;
+      let m; try { m = JSON.parse(line); } catch { continue; }
+      if (m.event !== 'message' || m.title !== 'status') continue;
+      try { last = JSON.parse(m.message); } catch { last = { event: m.message }; }
+    }
+    if (last) { paint(last); if (force) log('статус: ' + (last.event||'') + ' fw=' + last.fw); }
+    else if (force) log('статусов пока нет — нажми Ping');
+  } catch (e) { log('опрос: ' + e.message); }
+}
+
+loadCfg();
+poll(false);
+setInterval(() => poll(false), 20000);
+</script>
+</body>
+</html>
