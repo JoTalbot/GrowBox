@@ -47,7 +47,7 @@
 #define RELAY_OFF         HIGH
 
 #define WDT_TIMEOUT_SEC   45
-#define FIRMWARE_VERSION  "6.3.7"
+#define FIRMWARE_VERSION  "6.3.8"
 
 enum GrowStage {
   STAGE_VEG = 0,

@@ -40,7 +40,30 @@ void handleAdmin() {
     html += soilConnected[i] ? (" " + String(soilMoisture[i]) + "%") : " ОТКЛ";
     html += "</b></div>";
   }
-  html += "</div><div class='c'><b>Климат</b><form action=/saveSettings method=POST>";
+  html += "</div><div class='c'><b>Реле</b>";
+  html += "<div class=r><span>Свет " + String(stateLight ? "ВКЛ" : "ВЫКЛ") + " / " + String(modeShort(modeLight)) + "</span></div>";
+  html += "<button class=s onclick=\"fetch('/setMode?d=light&m=auto').then(()=>location.reload())\">Авто</button>";
+  html += "<button class=s onclick=\"fetch('/setMode?d=light&m=on').then(()=>location.reload())\">Вкл</button>";
+  html += "<button class=s onclick=\"fetch('/setMode?d=light&m=off').then(()=>location.reload())\">Выкл</button>";
+  html += "<div class=r><span>Вытяжка " + String(stateExhaust ? "ВКЛ" : "ВЫКЛ") + " / " + String(modeShort(modeExhaust)) + "</span></div>";
+  html += "<button class=s onclick=\"fetch('/setMode?d=exhaust&m=auto').then(()=>location.reload())\">Авто</button>";
+  html += "<button class=s onclick=\"fetch('/setMode?d=exhaust&m=on').then(()=>location.reload())\">Вкл</button>";
+  html += "<button class=s onclick=\"fetch('/setMode?d=exhaust&m=off').then(()=>location.reload())\">Выкл</button>";
+  html += "<div class=r><span>Обогрев " + String(stateHeater ? "ВКЛ" : "ВЫКЛ") + " / " + String(modeShort(modeHeater)) + "</span></div>";
+  html += "<button class=s onclick=\"fetch('/setMode?d=heater&m=auto').then(()=>location.reload())\">Авто</button>";
+  html += "<button class=s onclick=\"fetch('/setMode?d=heater&m=on').then(()=>location.reload())\">Вкл</button>";
+  html += "<button class=s onclick=\"fetch('/setMode?d=heater&m=off').then(()=>location.reload())\">Выкл</button>";
+  html += "<div class=r><span>Обдув " + String(stateFan ? "ВКЛ" : "ВЫКЛ") + " / " + String(modeShort(modeFan)) + "</span></div>";
+  html += "<button class=s onclick=\"fetch('/setMode?d=fan&m=auto').then(()=>location.reload())\">Авто</button>";
+  html += "<button class=s onclick=\"fetch('/setMode?d=fan&m=on').then(()=>location.reload())\">Вкл</button>";
+  html += "<button class=s onclick=\"fetch('/setMode?d=fan&m=off').then(()=>location.reload())\">Выкл</button>";
+  html += "<div class=r><span>Увлажн " + String(stateHumid ? "ВКЛ" : "ВЫКЛ") + " / " + String(modeShort(modeHumid)) + "</span></div>";
+  html += "<button class=s onclick=\"fetch('/setMode?d=humid&m=auto').then(()=>location.reload())\">Авто</button>";
+  html += "<button class=s onclick=\"fetch('/setMode?d=humid&m=on').then(()=>location.reload())\">Вкл</button>";
+  html += "<button class=s onclick=\"fetch('/setMode?d=humid&m=off').then(()=>location.reload())\">Выкл</button>";
+  html += "<br><button class=s onclick=\"fetch('/allAuto').then(()=>location.reload())\">Все в авто</button></div>";
+
+  html += "<div class='c'><b>Климат</b><form action=/saveSettings method=POST>";
   html += "<input type=hidden name=next value=admin><input type=hidden name=clim value=1><div class=g>";
   adminNum(html, "Вега с", "vegH0", String(vegStartHour));
   adminNum(html, "Вега по", "vegH1", String(vegEndHour));
