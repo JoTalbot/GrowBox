@@ -127,6 +127,13 @@ String statusJson(const String& event) {
   json += "\"mExh\":\"" + String(modeExhaust == MODE_ON ? "on" : (modeExhaust == MODE_OFF ? "off" : "auto")) + "\",";
   json += "\"mHeat\":\"" + String(modeHeater == MODE_ON ? "on" : (modeHeater == MODE_OFF ? "off" : "auto")) + "\",";
   json += "\"mFan\":\"" + String(modeFan == MODE_ON ? "on" : (modeFan == MODE_OFF ? "off" : "auto")) + "\",";
+  json += "\"soil1\":" + String(soilMoisture[0]) + ",";
+  json += "\"soil2\":" + String(soilMoisture[1]) + ",";
+  json += "\"soil3\":" + String(soilMoisture[2]) + ",";
+  json += "\"s1Ok\":" + String(soilConnected[0] ? 1 : 0) + ",";
+  json += "\"s2Ok\":" + String(soilConnected[1] ? 1 : 0) + ",";
+  json += "\"s3Ok\":" + String(soilConnected[2] ? 1 : 0) + ",";
+  json += "\"wTemp\":" + String(ds18Connected ? waterTemperature : -127, 1) + ",";
   json += "\"ip\":\"" + WiFi.localIP().toString() + "\"";
   json += "}";
   return json;

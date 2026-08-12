@@ -47,7 +47,7 @@
 #define RELAY_OFF         HIGH
 
 #define WDT_TIMEOUT_SEC   45
-#define FIRMWARE_VERSION  "6.3.3"
+#define FIRMWARE_VERSION  "6.3.4"
 
 enum GrowStage {
   STAGE_VEG = 0,
@@ -1312,6 +1312,7 @@ void setup() {
   loadRemoteSettings();
   loadMqttSettings();
   prefs.end();
+  applyManualRelays();
 
   dht.begin();
   waterSensors.begin();
