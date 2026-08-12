@@ -162,6 +162,17 @@ function paint(j){
   lastTs = Date.now();
   $('link').textContent = 'онлайн';
   $('link').className = 'badge on';
+  const bit = (name, on, mode) => {
+    const st = on ? 'вкл' : 'выкл';
+    if (mode === 'on') return name + ' РУЧН вкл';
+    if (mode === 'off') return name + ' РУЧН выкл';
+    return name + ' ' + st;
+  };
+  $('summary').textContent = [
+    bit('свет', !!Number(j.light), j.mLight),
+    bit('вытяжка', !!Number(j.exhaust), j.mExh),
+    bit('обдув', !!Number(j.fan), j.mFan)
+  ].join(' · ');
   $('fw').textContent = 'v' + (j.fw || '—');
   $('stage').textContent = (j.stage || '—') + ' / день ' + (j.day ?? '—');
   const t = Number(j.temp);

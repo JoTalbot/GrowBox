@@ -47,7 +47,7 @@
 #define RELAY_OFF         HIGH
 
 #define WDT_TIMEOUT_SEC   45
-#define FIRMWARE_VERSION  "6.3.2"
+#define FIRMWARE_VERSION  "6.3.3"
 
 enum GrowStage {
   STAGE_VEG = 0,
@@ -191,7 +191,7 @@ unsigned long lastRemotePoll = 0;
 unsigned long lastRemoteHeartbeat = 0;
 const unsigned long REMOTE_POLL_MS = 25000;
 const unsigned long REMOTE_HEARTBEAT_MS = 60UL * 1000UL;
-String lastNtfySince = "5m";
+String lastNtfySince = "20s";
 long lastInboxId = 0;
 bool otaPending = false;
 String otaPendingUrl = "";
@@ -399,6 +399,35 @@ void loadSettings() {
   modeHumid = (OverrideMode)prefs.getUChar("mHumid", MODE_AUTO);
 }
 
+void applyManualRelays() {
+  if (modeLight == MODE_ON && !thermalShutdown) {
+    stateLight = true;
+    lightPwmDuty = 255;
+  } else if (modeLight == MODE_OFF || thermalShutdown) {
+    stateLight = false;
+    lightPwmDuty = 0;
+  }
+  setRelay(RELAY_LIGHT, stateLight);
+  analogWrite(PIN_LIGHT_PWM, lightPwmDuty);
+
+  if (modeExhaust == MODE_ON) stateExhaust = true;
+  else if (modeExhaust == MODE_OFF) stateExhaust = false;
+  setRelay(RELAY_EXHAUST, stateExhaust);
+
+  if (modeHeater == MODE_ON) stateHeater = true;
+  else if (modeHeater == MODE_OFF) stateHeater = false;
+  setRelay(RELAY_HEATER, stateHeater);
+
+  if (modeFan == MODE_ON) stateFan = true;
+  else if (modeFan == MODE_OFF) stateFan = false;
+  setRelay(RELAY_FAN, stateFan);
+
+  if (modeHumid == MODE_ON) stateHumid = true;
+  else if (modeHumid == MODE_OFF) stateHumid = false;
+  if (!enableHumidifier && modeHumid != MODE_ON) stateHumid = false;
+  setRelay(RELAY_HUMIDIFIER, stateHumid);
+}
+
 bool setDeviceMode(const String& dev, OverrideMode mode) {
   if (dev == "light") modeLight = mode;
   else if (dev == "exhaust") modeExhaust = mode;
@@ -407,6 +436,7 @@ bool setDeviceMode(const String& dev, OverrideMode mode) {
   else if (dev == "humid") modeHumid = mode;
   else return false;
   persistModes();
+  applyManualRelays();
   return true;
 }
 

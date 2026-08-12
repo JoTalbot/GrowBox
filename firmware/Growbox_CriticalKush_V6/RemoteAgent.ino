@@ -146,6 +146,14 @@ void requestOta(const String& url) {
     lastRemoteEvent = "ota-bad-url";
     return;
   }
+  prefs.begin("growbox", true);
+  String already = prefs.getString("lastOta", "");
+  prefs.end();
+  if (already == u) {
+    lastOtaResult = "same";
+    lastRemoteEvent = "ota-skip-same";
+    return;
+  }
   otaPendingUrl = u;
   otaPending = true;
   lastRemoteEvent = "ota-queued";
@@ -157,6 +165,9 @@ void performPendingOta() {
   String url = otaPendingUrl;
   lastOtaResult = "flashing";
   lastRemoteEvent = "ota-start";
+  prefs.begin("growbox", false);
+  prefs.putString("lastOta", url);
+  prefs.end();
   publishRemoteStatus("ota-start");
   sendTelegramMessage("📦 <b>OTA:</b> качаю " + url);
 
@@ -311,8 +322,26 @@ void pollNtfy() {
     String title = jsonGet(line, "title");
     if (title == "status") continue;
     String msgId = jsonGet(line, "id");
-    if (msgId.length() > 0) lastNtfySince = msgId;
+    if (msgId.length() > 0) {
+      lastNtfySince = msgId;
+      persistRemote();
+    }
+    long msgTime = jsonGet(line, "time").toInt();
+    time_t nowTs;
+    time(&nowTs);
+    bool stale = (msgTime > 0 && nowTs > 1700000000L && (nowTs - msgTime) > 45);
     String msg = jsonGet(line, "message");
+    String cmdPeek = msg;
+    if (msg.startsWith("{")) cmdPeek = jsonGet(msg, "cmd");
+    else {
+      int sp = msg.indexOf(' ');
+      cmdPeek = (sp < 0) ? msg : msg.substring(0, sp);
+    }
+    cmdPeek.toLowerCase();
+    if (stale && (cmdPeek == "ota" || cmdPeek == "flash" || cmdPeek == "reboot")) {
+      lastRemoteEvent = "skip-stale";
+      continue;
+    }
     if (msg.startsWith("{")) {
       executeRemoteCommand(jsonGet(msg, "cmd"), jsonGet(msg, "arg"), jsonGet(msg, "key"));
     } else {
