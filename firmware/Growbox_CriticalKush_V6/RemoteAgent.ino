@@ -159,7 +159,6 @@ void performPendingOta() {
   client.setTimeout(15);
   httpUpdate.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   httpUpdate.rebootOnUpdate(true);
-  httpUpdate.setUserAgent("GrowBox-OTA/" FIRMWARE_VERSION);
   httpUpdate.onProgress([](int cur, int total) {
     feedWatchdog();
   });

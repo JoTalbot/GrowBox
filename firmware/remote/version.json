@@ -1,5 +1,5 @@
 {
   "version": "6.3",
-  "url": "",
-  "notes": "Собери firmware.bin через GitHub Actions (Build firmware) или PlatformIO и пропиши url. Пустой url = только проверка версии."
+  "url": "https://raw.githubusercontent.com/JoTalbot/GrowBox/main/firmware/bin/GrowBox-v6.3.bin",
+  "notes": "Собери через PlatformIO или скачай этот bin и залей через ElegantOTA /update."
 }

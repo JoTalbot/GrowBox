@@ -1331,7 +1331,6 @@ bool computeHumidAuto() {
 void loop() {
   feedWatchdog();
   server.handleClient();
-  ElegantOTA.loop();
   ensureCycleStart();
   performPendingOta();
 
