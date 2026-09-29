@@ -47,7 +47,11 @@
 #define RELAY_OFF         HIGH
 
 #define WDT_TIMEOUT_SEC   45
+#ifdef GROWBOX_FORCE_DRY
+#define FIRMWARE_VERSION  "6.3.9-dry"
+#else
 #define FIRMWARE_VERSION  "6.3.9"
+#endif
 
 enum GrowStage {
   STAGE_VEG = 0,
@@ -1278,6 +1282,11 @@ void setup() {
 
   prefs.begin("growbox", false);
   currentStage = (GrowStage)prefs.getInt("stage", 0);
+#ifdef GROWBOX_FORCE_DRY
+  // «Сухая» сборка: каждая загрузка стартует с режима «Сушка».
+  // Стадию можно сменить на лету, но после ребута снова будет сушка.
+  currentStage = STAGE_DRY;
+#endif
   cycleStartTimestamp = prefs.getULong("start", 0);
   enableSafetySensors = prefs.getBool("safetyEn", false);
   enablePowerSense   = prefs.getBool("powerEn", false);
