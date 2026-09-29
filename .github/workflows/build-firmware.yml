@@ -19,14 +19,19 @@ jobs:
           python-version: "3.11"
       - name: Install PlatformIO
         run: pip install -U platformio
-      - name: Build v6.3
+      - name: Build firmware
         run: pio run -e esp32dev
       - name: Build OTA service
         run: pio run -d firmware/Growbox_OTA_Service -e ota_service
       - name: Collect bins
         run: |
           mkdir -p dist
-          cp .pio/build/esp32dev/firmware.bin dist/GrowBox-v6.3.bin
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            MAIN=GrowBox-${GITHUB_REF_NAME}.bin
+          else
+            MAIN=firmware.bin
+          fi
+          cp .pio/build/esp32dev/firmware.bin "dist/$MAIN"
           cp firmware/Growbox_OTA_Service/.pio/build/ota_service/firmware.bin dist/GrowBox-OTA-Service.bin
           ls -lh dist
       - name: Upload artifact
@@ -49,5 +54,6 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          name: GrowBox ${{ github.ref_name }}
           files: dist/*.bin
           generate_release_notes: true
