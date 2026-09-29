@@ -1,5 +1,5 @@
 {
   "version": "6.3.9",
-  "url": "https://raw.githubusercontent.com/JoTalbot/GrowBox/main/firmware/bin/GrowBox-v6.3.9.bin",
+  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.3.9/GrowBox-v6.3.9.bin",
   "notes": "Slim dashboard, admin relays, water confirm"
 }
