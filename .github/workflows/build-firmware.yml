@@ -20,7 +20,7 @@ jobs:
       - name: Install PlatformIO
         run: pip install -U platformio
       - name: Build firmware
-        run: pio run -e esp32dev
+        run: pio run -e esp32dev -e esp32dev_dry
       - name: Build OTA service
         run: pio run -d firmware/Growbox_OTA_Service -e ota_service
       - name: Collect bins
@@ -32,6 +32,7 @@ jobs:
             MAIN=firmware.bin
           fi
           cp .pio/build/esp32dev/firmware.bin "dist/$MAIN"
+          cp .pio/build/esp32dev_dry/firmware.bin "dist/${MAIN%.bin}-dry.bin"
           cp firmware/Growbox_OTA_Service/.pio/build/ota_service/firmware.bin dist/GrowBox-OTA-Service.bin
           ls -lh dist
       - name: Upload artifact
