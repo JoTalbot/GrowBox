@@ -48,9 +48,9 @@
 
 #define WDT_TIMEOUT_SEC   45
 #ifdef GROWBOX_FORCE_DRY
-#define FIRMWARE_VERSION  "6.3.9-dry"
+#define FIRMWARE_VERSION  "6.4.0-dry"
 #else
-#define FIRMWARE_VERSION  "6.3.9"
+#define FIRMWARE_VERSION  "6.4.0"
 #endif
 
 enum GrowStage {
@@ -73,6 +73,8 @@ float tempTargetNight = 20.5;
 float tempTargetDry   = 16.0;
 float tempHysteresis  = 1.0;
 float tempEmergency   = 32.5;
+float rhTargetDry     = 60.0;   // цель RH на сушке (60/60), %
+float rhHystDry       = 5.0;    // коридор ±%
 
 int soilDryThreshold = 28;
 unsigned long wateringDurationMs = 8000;
@@ -357,6 +359,8 @@ void persistSettings() {
   prefs.putFloat("tDry", tempTargetDry);
   prefs.putFloat("tHyst", tempHysteresis);
   prefs.putFloat("tEmerg", tempEmergency);
+  prefs.putFloat("rhT", rhTargetDry);
+  prefs.putFloat("rhH", rhHystDry);
   prefs.putInt("soilDry", soilDryThreshold);
   prefs.putULong("waterMs", wateringDurationMs);
   prefs.putULong("soakMs", soilSoakDelayMs);
@@ -382,6 +386,8 @@ void loadSettings() {
   tempTargetDry = prefs.getFloat("tDry", tempTargetDry);
   tempHysteresis = prefs.getFloat("tHyst", tempHysteresis);
   tempEmergency = prefs.getFloat("tEmerg", tempEmergency);
+  rhTargetDry = prefs.getFloat("rhT", rhTargetDry);
+  rhHystDry = prefs.getFloat("rhH", rhHystDry);
   soilDryThreshold = prefs.getInt("soilDry", soilDryThreshold);
   wateringDurationMs = prefs.getULong("waterMs", wateringDurationMs);
   soilSoakDelayMs = prefs.getULong("soakMs", soilSoakDelayMs);
@@ -649,6 +655,7 @@ void handleTelegramCommand(String cmd) {
     s += "Цвет: " + String(bloomStartHour) + ":00–" + String(bloomEndHour) + ":00\n";
     s += "Рассвет: " + String(sunriseMin) + " мин\n";
     s += "Темп день/ночь/сушка: " + String(tempTargetDay, 1) + " / " + String(tempTargetNight, 1) + " / " + String(tempTargetDry, 1) + " °C\n";
+    s += "RH сушка: " + String(rhTargetDry, 0) + " % (±" + String(rhHystDry, 0) + ")\n";
     s += "Полив: порог " + String(soilDryThreshold) + "%, " + String(wateringDurationMs / 1000) + " сек, soak " + String(soilSoakDelayMs / 60000) + " мин\n";
     s += "VPD вега " + String(vpdVegMin, 2) + "–" + String(vpdVegMax, 2) + ", цвет " + String(vpdBloomMin, 2) + "–" + String(vpdBloomMax, 2) + "\n";
     s += "Увлажнитель: " + String(enableHumidifier ? "включён (GPIO21)" : "выключен");
@@ -1245,6 +1252,8 @@ void handleSaveSettings() {
   tempTargetDry = argF("tDry", tempTargetDry, 8, 25);
   tempHysteresis = argF("tHyst", tempHysteresis, 0.2, 5);
   tempEmergency = argF("tEmerg", tempEmergency, 28, 45);
+  rhTargetDry = argF("rhT", rhTargetDry, 40, 80);
+  rhHystDry = argF("rhH", rhHystDry, 2, 15);
   vpdVegMin = argF("vpdVmin", vpdVegMin, 0.2, 2.5);
   vpdVegMax = argF("vpdVmax", vpdVegMax, 0.3, 3.0);
   vpdBloomMin = argF("vpdBmin", vpdBloomMin, 0.2, 2.5);
@@ -1474,18 +1483,39 @@ void loop() {
       if (currentStage == STAGE_DRY) {
         autoLight = false;
         autoPwm = 0;
-        if (dryVentState && (currentMillis - dryVentTimer >= 30000)) {
-          dryVentState = false;
-          dryVentTimer = currentMillis;
-        } else if (!dryVentState && (currentMillis - dryVentTimer >= 600000)) {
+        // Сушка 60/60: держим RH возле цели. Вытяжка осушает, дуйчик помогает
+        // (до +2 °C сверх цели), когда влажно. Добавить влагу нечем — при низкой
+        // RH просто держим её: вытяжка в минимуме.
+        float rhOver  = rhTargetDry + rhHystDry;
+        float rhUnder = rhTargetDry - rhHystDry;
+        if (dhtConnected && humidity >= rhOver) {
           dryVentState = true;
           dryVentTimer = currentMillis;
+          autoExhaust = true;
+        } else if (dhtConnected && humidity <= rhUnder) {
+          dryVentState = false;
+          dryVentTimer = currentMillis;
+          autoExhaust = false;
+        } else {
+          if (dryVentState && (currentMillis - dryVentTimer >= 30000)) {
+            dryVentState = false;
+            dryVentTimer = currentMillis;
+          } else if (!dryVentState && (currentMillis - dryVentTimer >= 600000)) {
+            dryVentState = true;
+            dryVentTimer = currentMillis;
+          }
+          autoExhaust = dryVentState;
         }
-        autoExhaust = dryVentState;
         if (dhtConnected) {
-          if (temperature < (tempTargetDry - tempHysteresis)) autoHeater = true;
-          else if (temperature >= tempTargetDry) autoHeater = false;
+          float tOff = tempTargetDry + (humidity >= rhOver ? 2.0f : 0.0f);
+          float tOn  = tOff - tempHysteresis;
+          if (temperature < tOn) autoHeater = true;
+          else if (temperature >= tOff) autoHeater = false;
           else autoHeater = stateHeater && (modeHeater == MODE_AUTO);
+          if (humidity >= 75 && (currentMillis - lastTgAlertTime > 14400000)) {
+            lastTgAlertTime = currentMillis;
+            sendTelegramMessage("⚠️ <b>Риск плесени:</b> RH " + String(humidity, 1) + "% на сушке");
+          }
         }
       } else {
         int startH = (currentStage == STAGE_VEG) ? vegStartHour : bloomStartHour;
@@ -1525,7 +1555,11 @@ void loop() {
       }
     } else {
       // нет NTP — автосвет не трогаем, ручной режим всё равно сработает ниже
-      autoExhaust = (currentStage != STAGE_DRY);
+      if (currentStage == STAGE_DRY) {
+        autoExhaust = dhtConnected && humidity >= (rhTargetDry + rhHystDry);
+      } else {
+        autoExhaust = true;
+      }
     }
 
     if (dhtConnected && temperature >= tempEmergency) {

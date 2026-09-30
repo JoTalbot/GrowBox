@@ -73,6 +73,8 @@ void handleAdmin() {
   adminNum(html, "Т день", "tDay", String(tempTargetDay, 1));
   adminNum(html, "Т ночь", "tNight", String(tempTargetNight, 1));
   adminNum(html, "Т сушка", "tDry", String(tempTargetDry, 1));
+  adminNum(html, "RH сушка %", "rhT", String(rhTargetDry, 0));
+  adminNum(html, "RH гист %", "rhH", String(rhHystDry, 0));
   adminNum(html, "Гистер", "tHyst", String(tempHysteresis, 1));
   adminNum(html, "Авария", "tEmerg", String(tempEmergency, 1));
   adminNum(html, "VPD v min", "vpdVmin", String(vpdVegMin, 2));
