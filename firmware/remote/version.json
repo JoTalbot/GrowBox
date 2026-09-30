@@ -1,5 +1,5 @@
 {
-  "version": "6.3.9",
-  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.3.9/GrowBox-v6.3.9.bin",
-  "notes": "Slim dashboard, admin relays, water confirm"
+  "version": "6.4.0",
+  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.4.0/GrowBox-v6.4.0.bin",
+  "notes": "Drying 60/60 RH hold; exhaust and heater assist; -dry image"
 }
