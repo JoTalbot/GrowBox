@@ -1,5 +1,5 @@
 {
-  "version": "6.5.2",
-  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.2/GrowBox-v6.5.2.bin",
-  "notes": "Mobile UI, DHT22 heater fail-safe, sensor auto-discovery, persistent GPIO map and release asset validation"
+  "version": "6.5.3",
+  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.3/GrowBox-v6.5.3.bin",
+  "notes": "Mobile UI, DHT22 heater fail-safe, sensor auto-discovery, persistent GPIO map and firmware version consistency"
 }
