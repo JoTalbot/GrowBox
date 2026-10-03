@@ -1,5 +1,5 @@
 {
-  "version": "6.4.0",
-  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.4.0/GrowBox-v6.4.0.bin",
-  "notes": "Drying 60/60 RH hold; exhaust and heater assist; -dry image"
+  "version": "6.5.0",
+  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.0/GrowBox-v6.5.0.bin",
+  "notes": "Sensor Auto-Discovery for DHT22 and up to three capacitive soil probes; persistent GPIO map and admin rescan"
 }
