@@ -1,5 +1,5 @@
 {
-  "version": "6.5.0",
-  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.0/GrowBox-v6.5.0.bin",
-  "notes": "Sensor Auto-Discovery for DHT22 and up to three capacitive soil probes; persistent GPIO map and admin rescan"
+  "version": "6.5.1",
+  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.1/GrowBox-v6.5.1.bin",
+  "notes": "Mobile UI, DHT22 heater fail-safe, sensor auto-discovery and persistent GPIO map"
 }
