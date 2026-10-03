@@ -11,6 +11,7 @@ on:
       - "phone/**"
       - "docs/**"
       - ".github/workflows/build-firmware.yml"
+      - "firmware/remote/version.json"
 
 jobs:
   build:
