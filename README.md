@@ -2,7 +2,7 @@
 
 Прошивка ESP32 для автоматического гроубокса: климат, свет с рассветом/закатом, полив трёх зон, безопасность и дашборд.
 
-Текущая версия прошивки: **v6.4.0**  
+Текущая версия прошивки: **v6.5.1**  
 Скетч: [`firmware/Growbox_CriticalKush_V6/Growbox_CriticalKush_V6.ino`](firmware/Growbox_CriticalKush_V6/Growbox_CriticalKush_V6.ino)
 
 ## Что умеет
@@ -82,6 +82,15 @@ Arduino IDE 2.x, плата **ESP32 Dev Module**, ядро Espressif 2.0+ или
 Как включить и слать команды: [firmware/remote/README.md](firmware/remote/README.md).  
 Скрипты: `tools/remote_cmd.py`, `tools/remote_status.py`.  
 Сборка `.bin`: GitHub Actions → **Build firmware**.
+
+## Что нового в v6.5.1
+
+- Fail-safe обогрева: при отсутствии/некорректных показаний DHT22 обогрев принудительно выключен, включая ручной режим.
+- Автоопределение DHT22 и трёх датчиков почвы с сохранением карты GPIO.
+- Основной веб-интерфейс адаптирован под Android/iPhone.
+- Отключено кэширование главной веб-страницы ESP32, чтобы Android не держал старый интерфейс.
+- Мобильный пульт работает через polling каждые 10 секунд и использует SSE как ускоренный канал.
+- OTA metadata переведена на v6.5.1.
 
 ## Что нового в v6.4
 
