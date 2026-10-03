@@ -1,5 +1,5 @@
 name: Build firmware
-# [release] v6.5.0
+# [release] v6.5.0 final
 
 on:
   workflow_dispatch:
