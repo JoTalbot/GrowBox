@@ -1,5 +1,5 @@
 name: Build firmware
-# [release] v6.5.1 mobile + heater fail-safe
+# [release] v6.5.1 final mobile + heater fail-safe
 
 on:
   workflow_dispatch:
