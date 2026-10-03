@@ -48,9 +48,9 @@
 
 #define WDT_TIMEOUT_SEC   45
 #ifdef GROWBOX_FORCE_DRY
-#define FIRMWARE_VERSION  "6.5.0-dry"
+#define FIRMWARE_VERSION  "6.5.1-dry"
 #else
-#define FIRMWARE_VERSION  "6.5.0"
+#define FIRMWARE_VERSION  "6.5.1"
 #endif
 
 enum GrowStage {
@@ -1054,7 +1054,7 @@ void handleRoot() {
   html += ".chart-legend { display: flex; justify-content: space-around; font-size: 10px; margin-top: 4px; }";
   html += ".footer { text-align: center; margin-top: 12px; font-size: 11px; color: #74c69d; }";
   html += ".footer a { color: #74c69d; text-decoration: none; }";
-  html += "</style></head><body><div class='wrap'>";
+  html += "button,a,input,select{touch-action:manipulation;-webkit-tap-highlight-color:transparent}@media(max-width:600px){body{padding:8px 8px calc(24px + env(safe-area-inset-bottom));}.grid{grid-template-columns:1fr!important}.card{padding:10px}.row{gap:6px;flex-wrap:wrap}button{min-height:44px;font-size:14px}input,select{min-height:44px;font-size:16px!important}svg{height:120px!important}}</style></head><body><div class='wrap'>";
 
   html += "<div id='alertBanner' class='alert'>⚠️ АВАРИЙНЫЙ ПЕРЕГРЕВ! Свет отключен.</div>";
   html += "<div id='powerAlert' class='alert' style='background:#b02a37;'>🚨 ПРОПАЛО ПИТАНИЕ 220V!</div>";
@@ -1240,6 +1240,8 @@ void handleRoot() {
   html += "function loadHistory(){fetch('/api/history').then(r=>r.json()).then(drawCharts).catch(e=>console.error(e));}";
   html += "setInterval(upd,2000);upd();setInterval(loadHistory,60000);loadHistory();";
   html += "</script></body></html>";
+  server.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+  server.sendHeader("Pragma", "no-cache");
   server.send(200, "text/html; charset=utf-8", html);
 }
 
