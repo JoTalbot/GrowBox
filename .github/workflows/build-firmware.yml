@@ -29,11 +29,8 @@ jobs:
       - name: Collect bins
         run: |
           mkdir -p dist
-          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
-            MAIN=GrowBox-${GITHUB_REF_NAME}.bin
-          else
-            MAIN=firmware.bin
-          fi
+          VERSION=$(python -c 'import json; print(json.load(open("firmware/remote/version.json"))["version"])')
+          MAIN=GrowBox-v${VERSION}.bin
           cp .pio/build/esp32dev/firmware.bin "dist/$MAIN"
           cp .pio/build/esp32dev_dry/firmware.bin "dist/${MAIN%.bin}-dry.bin"
           cp firmware/Growbox_OTA_Service/.pio/build/ota_service/firmware.bin dist/GrowBox-OTA-Service.bin
