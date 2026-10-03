@@ -48,9 +48,9 @@
 
 #define WDT_TIMEOUT_SEC   45
 #ifdef GROWBOX_FORCE_DRY
-#define FIRMWARE_VERSION  "6.4.0-dry"
+#define FIRMWARE_VERSION  "6.5.0-dry"
 #else
-#define FIRMWARE_VERSION  "6.4.0"
+#define FIRMWARE_VERSION  "6.5.0"
 #endif
 
 enum GrowStage {
@@ -101,7 +101,15 @@ const long  gmtOffset_sec      = 2 * 3600;
 const int   daylightOffset_sec = 3600;
 
 WebServer server(80);
-DHT dht(DHT_PIN, DHTTYPE);
+DHT* dht = nullptr;
+
+// Runtime sensor map. Discovery is restricted to safe ADC1/DHT candidates.
+int dhtPin = DHT_PIN;
+int soilPins[3] = {SOIL1_PIN, SOIL2_PIN, SOIL3_PIN};
+bool sensorDiscoveryAuto = true;
+bool sensorDiscoveryRan = false;
+const uint8_t SOIL_ADC_CANDIDATES[] = {32, 34, 35, 36, 39};
+const uint8_t DHT_CANDIDATES[] = {4, 5, 32, 34, 35, 36, 39};
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature waterSensors(&oneWire);
 Preferences prefs;
@@ -203,6 +211,10 @@ bool otaPending = false;
 String otaPendingUrl = "";
 
 void persistRemote();
+void loadSensorConfig();
+void saveSensorConfig();
+void discoverSensors(bool force = false);
+void handleSensorDiscovery();
 void loadRemoteSettings();
 void pollRemoteAgent();
 void publishRemoteStatus(const String& event);
@@ -350,6 +362,87 @@ void persistModes() {
   prefs.putUChar("mFan", modeFan);
   prefs.putUChar("mHumid", modeHumid);
   prefs.end();
+}
+
+void saveSensorConfig() {
+  prefs.begin("growbox", false);
+  prefs.putBool("sensorCfg", true);
+  prefs.putInt("dhtPin", dhtPin);
+  for (int i = 0; i < 3; i++) prefs.putInt((String("soilPin") + i).c_str(), soilPins[i]);
+  prefs.end();
+}
+
+bool validSoilPin(int pin) {
+  for (uint8_t p : SOIL_ADC_CANDIDATES) if (p == pin) return true;
+  return false;
+}
+
+bool validDhtPin(int pin) {
+  for (uint8_t p : DHT_CANDIDATES) if (p == pin) return true;
+  return false;
+}
+
+void loadSensorConfig() {
+  bool configured = prefs.getBool("sensorCfg", false);
+  if (!configured) { sensorDiscoveryAuto = true; return; }
+  dhtPin = prefs.getInt("dhtPin", DHT_PIN);
+  for (int i = 0; i < 3; i++) soilPins[i] = prefs.getInt((String("soilPin") + i).c_str(), i == 0 ? SOIL1_PIN : (i == 1 ? SOIL2_PIN : SOIL3_PIN));
+  sensorDiscoveryAuto = prefs.getBool("sensorAuto", true);
+  if (!validDhtPin(dhtPin) || !validSoilPin(soilPins[0]) || !validSoilPin(soilPins[1]) || !validSoilPin(soilPins[2])) sensorDiscoveryAuto = true;
+}
+
+void discoverSensors(bool force) {
+  if (!force && prefs.getBool("sensorCfg", false) && !sensorDiscoveryAuto) return;
+  Serial.println("[DISCOVERY] scanning sensors...");
+  bool used[5] = {false,false,false,false,false};
+  int found = 0;
+  for (uint8_t i = 0; i < sizeof(SOIL_ADC_CANDIDATES); i++) {
+    uint8_t pin = SOIL_ADC_CANDIDATES[i];
+    pinMode(pin, INPUT);
+    uint32_t sum = 0;
+    for (int n = 0; n < 8; n++) { sum += analogRead(pin); delay(4); }
+    int raw = sum / 8;
+    // Open/short inputs are rejected; normal capacitive probes sit in the middle.
+    if (raw > 100 && raw < 4000 && found < 3) {
+      soilPins[found++] = pin;
+      used[i] = true;
+      Serial.printf("[DISCOVERY] SOIL%d -> GPIO%d raw=%d\n", found, pin, raw);
+    }
+  }
+  while (found < 3) {
+    soilPins[found] = (found == 0 ? SOIL1_PIN : (found == 1 ? SOIL2_PIN : SOIL3_PIN));
+    found++;
+  }
+  dhtPin = DHT_PIN;
+  bool dhtFound = false;
+  for (uint8_t i = 0; i < sizeof(DHT_CANDIDATES) && !dhtFound; i++) {
+    uint8_t pin = DHT_CANDIDATES[i];
+    bool soilConflict = false;
+    for (int z = 0; z < 3; z++) if (soilPins[z] == pin) soilConflict = true;
+    if (soilConflict) continue;
+    DHT candidate(pin, DHTTYPE);
+    candidate.begin();
+    float t = candidate.readTemperature(false, true);
+    float h = candidate.readHumidity(true);
+    if (!isnan(t) && !isnan(h) && t > -30.0 && t < 70.0 && h >= 0.0 && h <= 100.0) {
+      dhtPin = pin;
+      dhtFound = true;
+      Serial.printf("[DISCOVERY] DHT22 -> GPIO%d T=%.1f RH=%.1f\n", pin, t, h);
+    }
+  }
+  if (!dhtFound) Serial.println("[DISCOVERY] DHT22 not found, keeping default GPIO4");
+  if (dht) { delete dht; dht = nullptr; }
+  dht = new DHT(dhtPin, DHTTYPE);
+  dht->begin();
+  sensorDiscoveryRan = true;
+  sensorDiscoveryAuto = false;
+  saveSensorConfig();
+  Serial.printf("[DISCOVERY] map: DHT=%d SOIL=[%d,%d,%d]\n", dhtPin, soilPins[0], soilPins[1], soilPins[2]);
+}
+
+void handleSensorDiscovery() {
+  discoverSensors(true);
+  server.send(200, "application/json", String("{\"ok\":1,\"dht\":") + dhtPin + ",\"soil1\":" + soilPins[0] + ",\"soil2\":" + soilPins[1] + ",\"soil3\":" + soilPins[2] + "}");
 }
 
 void persistSettings() {
@@ -845,6 +938,11 @@ void handleApiData() {
   json += "\"tgEn\":" + String(tgEnabled ? 1 : 0) + ",";
   json += "\"camIp\":\"" + camIp + "\",";
   json += "\"fw\":\"" + String(FIRMWARE_VERSION) + "\",";
+  json += "\"dhtPin\":" + String(dhtPin) + ",";
+  json += "\"soilPin1\":" + String(soilPins[0]) + ",";
+  json += "\"soilPin2\":" + String(soilPins[1]) + ",";
+  json += "\"soilPin3\":" + String(soilPins[2]) + ",";
+  json += "\"sensorAuto\":" + String(sensorDiscoveryAuto ? 1 : 0) + ",";
   json += "\"vpdMin\":" + String(vmin, 2) + ",";
   json += "\"vpdMax\":" + String(vmax, 2) + ",";
   json += "\"remoteEn\":" + String(remoteEnabled ? 1 : 0) + ",";
@@ -1314,12 +1412,12 @@ void setup() {
   prefs.end();
   applyManualRelays();
 
-  dht.begin();
+  loadSensorConfig();
+  discoverSensors(false);
+  if (!dht) { dht = new DHT(dhtPin, DHTTYPE); dht->begin(); }
   waterSensors.begin();
   waterSensors.setWaitForConversion(false);
-  pinMode(SOIL1_PIN, INPUT);
-  pinMode(SOIL2_PIN, INPUT);
-  pinMode(SOIL3_PIN, INPUT);
+  for (int i = 0; i < 3; i++) pinMode(soilPins[i], INPUT);
 
   WiFi.mode(WIFI_STA);
   WiFiManager wm;
@@ -1345,6 +1443,7 @@ void setup() {
   server.on("/togglePower", handleTogglePower);
   server.on("/resetCycle", handleResetCycle);
   server.on("/calib", handleCalib);
+  server.on("/discover", handleSensorDiscovery);
   server.on("/saveConfig", HTTP_POST, handleSaveConfig);
   server.on("/saveSettings", HTTP_POST, handleSaveSettings);
   server.on("/saveRemote", HTTP_POST, handleSaveRemote);
@@ -1418,8 +1517,8 @@ void loop() {
   if (currentMillis - lastSensorRead >= SENSOR_INTERVAL) {
     lastSensorRead = currentMillis;
 
-    float t = dht.readTemperature();
-    float h = dht.readHumidity();
+    float t = dht ? dht->readTemperature() : NAN;
+    float h = dht ? dht->readHumidity() : NAN;
     if (!isnan(t) && !isnan(h) && t > -30.0 && t < 70.0 && h >= 0.0 && h <= 100.0) {
       dhtConnected = true;
       temperature = t;
@@ -1440,7 +1539,7 @@ void loop() {
     waterSensors.requestTemperatures();
 
     for (int i = 0; i < 3; i++) {
-      int pin = (i == 0 ? SOIL1_PIN : (i == 1 ? SOIL2_PIN : SOIL3_PIN));
+      int pin = soilPins[i];
       int raw = analogRead(pin);
       soilRaw[i] = raw;
       if (raw > 100 && raw < 4000) {
