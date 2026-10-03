@@ -40,6 +40,14 @@ void handleAdmin() {
     html += soilConnected[i] ? (" " + String(soilMoisture[i]) + "%") : " ОТКЛ";
     html += "</b></div>";
   }
+  html += "<div class='c'><b>🔌 Автоопределение датчиков</b>";
+  html += "<div class=r><span>DHT22</span><b>GPIO " + String(dhtPin) + (dhtConnected ? (" • " + String(temperature,1) + "°C / " + String(humidity,1) + "%") : " • НЕТ") + "</b></div>";
+  for (int i = 0; i < 3; i++) {
+    html += "<div class=r><span>Почва #" + String(i + 1) + "</span><b>GPIO " + String(soilPins[i]) + " • " + (soilConnected[i] ? String(soilMoisture[i]) + "%" : "ОТКЛ") + "</b></div>";
+  }
+  html += "<div class=r><span>Режим</span><b>" + String(sensorDiscoveryAuto ? "AUTO" : "СОХРАНЕНО") + "</b></div>";
+  html += "<button onclick=\"fetch('/discover').then(()=>location.reload())\">🔍 Пересканировать</button>";
+  html += "<p style='font-size:10px;color:#8fa493;margin:6px 0 0'>Сканируются безопасные ADC1/DHT GPIO. Карта сохраняется в NVS.</p></div>";
   html += "</div><div class='c'><b>Реле</b>";
   html += "<div class=r><span>Свет " + String(stateLight ? "ВКЛ" : "ВЫКЛ") + " / " + String(modeShort(modeLight)) + "</span></div>";
   html += "<button class=s onclick=\"fetch('/setMode?d=light&m=auto').then(()=>location.reload())\">Авто</button>";
