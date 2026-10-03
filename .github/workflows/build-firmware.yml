@@ -1,5 +1,5 @@
 name: Build firmware
-# [release] v6.5.0 final
+# [release] v6.5.1 mobile + heater fail-safe
 
 on:
   workflow_dispatch:
@@ -8,6 +8,8 @@ on:
       - "firmware/Growbox_CriticalKush_V6/**"
       - "firmware/Growbox_OTA_Service/**"
       - "platformio.ini"
+      - "phone/**"
+      - "docs/**"
       - ".github/workflows/build-firmware.yml"
 
 jobs:
@@ -49,15 +51,19 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: firmware-bin
           path: dist
+      - name: Read release version
+        id: version
+        run: echo "version=$(python -c 'import json; print(json.load(open("firmware/remote/version.json"))["version"])' )" >> "$GITHUB_OUTPUT"
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: GrowBox v6.5.0
-          tag_name: v6.5.0
+          name: GrowBox v${{ steps.version.outputs.version }}
+          tag_name: v${{ steps.version.outputs.version }}
           target_commitish: main
           files: dist/*.bin
           generate_release_notes: true
