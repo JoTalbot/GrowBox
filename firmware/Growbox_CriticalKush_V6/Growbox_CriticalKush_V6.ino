@@ -340,6 +340,20 @@ bool applyOverride(OverrideMode mode, bool autoState) {
   return autoState;
 }
 
+// Fail-safe: heater is allowed only with a valid DHT22 reading.
+bool heaterSafetyOk() {
+  return dhtConnected &&
+         isfinite(temperature) &&
+         temperature > -30.0 &&
+         temperature < 70.0 &&
+         !thermalShutdown;
+}
+
+void forceHeaterSafeOff() {
+  stateHeater = false;
+  setRelay(RELAY_HEATER, false);
+}
+
 const char* modeLabel(OverrideMode mode) {
   if (mode == MODE_ON) return "РУЧН ВКЛ";
   if (mode == MODE_OFF) return "РУЧН ВЫКЛ";
@@ -521,7 +535,8 @@ void applyManualRelays() {
 
   if (modeHeater == MODE_ON) stateHeater = true;
   else if (modeHeater == MODE_OFF) stateHeater = false;
-  setRelay(RELAY_HEATER, stateHeater);
+  if (!heaterSafetyOk()) forceHeaterSafeOff();
+  else setRelay(RELAY_HEATER, stateHeater);
 
   if (modeFan == MODE_ON) stateFan = true;
   else if (modeFan == MODE_OFF) stateFan = false;
@@ -1674,7 +1689,13 @@ void loop() {
     stateExhaust = applyOverride(modeExhaust, autoExhaust);
     stateHeater  = applyOverride(modeHeater, autoHeater);
     setRelay(RELAY_EXHAUST, stateExhaust);
-    setRelay(RELAY_HEATER, stateHeater);
+
+    // Final safety interlock: manual heater:on cannot bypass DHT protection.
+    if (!heaterSafetyOk()) {
+      forceHeaterSafeOff();
+    } else {
+      setRelay(RELAY_HEATER, stateHeater);
+    }
 
     bool autoHumid = computeHumidAuto();
     stateHumid = applyOverride(modeHumid, autoHumid);
