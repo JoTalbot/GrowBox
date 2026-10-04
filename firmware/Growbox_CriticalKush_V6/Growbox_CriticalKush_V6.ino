@@ -732,7 +732,7 @@ void handleTelegramCommand(String cmd) {
   if (cmd == "🚿 полив") { sendTelegramMenu("🚿 <b>Ручной полив</b>\nВыберите горшок:", tgWaterKeyboard()); return; }
   if (cmd == "🌱 режим") { sendTelegramMenu("🌱 <b>Стадия выращивания</b>\nВыберите режим:", tgStageKeyboard()); return; }
   if (cmd == "🔌 датчики") { sendTelegramMenu("🔌 <b>Датчики</b>\nПроверка и автоопределение:", tgSensorKeyboard()); return; }
-  if (cmd == "⚙️ настройки") { sendTelegramMenu("⚙️ <b>Настройки GrowBox</b>", tgSettingsKeyboard()); handleTelegramCommand("/settings"); return; }
+  if (cmd == "⚙️ настройки" || cmd == "⚙️ показать настройки") { sendTelegramMenu("⚙️ <b>Настройки GrowBox</b>", tgSettingsKeyboard()); handleTelegramCommand("/settings"); return; }
   if (cmd == "📦 обновления") { sendTelegramMenu("📦 <b>Обновления</b>\nВерсия и ручная проверка OTA:", tgUpdateKeyboard()); return; }
   if (cmd == "🛰️ сервис") { sendTelegramMenu("🛰️ <b>Удалённый сервис</b>\nУправление каналом и контроллером:", tgServiceKeyboard()); return; }
   if (cmd == "📷 камера") { sendTelegramMenu("📷 <b>ESP32-CAM</b>", tgCameraKeyboard()); return; }
@@ -753,7 +753,11 @@ void handleTelegramCommand(String cmd) {
   if (cmd == "📥 pull") { lastRemotePoll = 0; sendTelegramMenu("📥 Канал поставлен на немедленный опрос.", tgServiceKeyboard()); return; }
   if (cmd == "📷 получить фото") { sendTelegramMenu("📷 <b>ESP32-CAM</b>\n" + camIp + "/capture", tgCameraKeyboard()); return; }
   if (cmd == "💡 свет" || cmd == "🌀 вытяжка" || cmd == "🔥 обогрев" || cmd == "💨 обдув" || cmd == "💧 увлажнитель") {
-    String icon = cmd.substring(0, 2);
+    String icon = "💡";
+    if (cmd == "🌀 вытяжка") icon = "🌀";
+    else if (cmd == "🔥 обогрев") icon = "🔥";
+    else if (cmd == "💨 обдув") icon = "💨";
+    else if (cmd == "💧 увлажнитель") icon = "💧";
     String name = cmd;
     if (cmd == "💡 свет") name = "Свет";
     else if (cmd == "🌀 вытяжка") name = "Вытяжка";
