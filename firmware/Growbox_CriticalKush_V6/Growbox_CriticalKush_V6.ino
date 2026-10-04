@@ -1032,7 +1032,6 @@ String telegramJsonUnescape(const String& in) {
   if (esc) out += '\\\\';
   return out;
 }
-
 void checkTelegramUpdates() {
   if (!tgEnabled || tgBotToken.length() < 15 || tgChatId.length() < 3) {
     tgLastError = "telegram disabled/not configured";
