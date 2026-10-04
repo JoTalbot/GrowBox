@@ -48,9 +48,9 @@
 
 #define WDT_TIMEOUT_SEC   45
 #ifdef GROWBOX_FORCE_DRY
-#define FIRMWARE_VERSION  "6.5.8-dry"
+#define FIRMWARE_VERSION  "6.5.9-dry"
 #else
-#define FIRMWARE_VERSION  "6.5.8"
+#define FIRMWARE_VERSION  "6.5.9"
 #endif
 
 enum GrowStage {
@@ -198,7 +198,9 @@ String remoteKey = "";
 String versionUrl = "https://raw.githubusercontent.com/JoTalbot/GrowBox/main/firmware/remote/version.json";
 String inboxUrl = "";
 bool remoteEnabled = false;
-bool autoOta = false;
+bool autoOta = true;
+unsigned long lastVersionCheck = 0;
+const unsigned long VERSION_CHECK_MS = 15UL * 60UL * 1000UL;
 String lastRemoteEvent = "-";
 String lastOtaResult = "-";
 unsigned long lastRemotePoll = 0;
@@ -1682,7 +1684,13 @@ void loop() {
       (currentMillis - lastRemoteHeartbeat >= REMOTE_HEARTBEAT_MS || lastRemoteHeartbeat == 0)) {
     lastRemoteHeartbeat = currentMillis;
     publishRemoteStatus("heartbeat");
-    if (autoOta) checkVersionFile(true);
+  }
+  // Automatic OTA is independent from the optional remote/ntfy channel.
+  // This keeps version checks working even when Remote is disabled.
+  if (autoOta && WiFi.status() == WL_CONNECTED &&
+      (currentMillis - lastVersionCheck >= VERSION_CHECK_MS || lastVersionCheck == 0)) {
+    lastVersionCheck = currentMillis;
+    checkVersionFile(true, false);
   }
 
   if (currentMillis - lastSensorRead >= SENSOR_INTERVAL) {
