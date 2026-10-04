@@ -7,6 +7,7 @@
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <HTTPUpdate.h>
+#include <esp_ota_ops.h>
 #include <esp_task_wdt.h>
 #include "time.h"
 #include <DHT.h>
@@ -48,9 +49,9 @@
 
 #define WDT_TIMEOUT_SEC   45
 #ifdef GROWBOX_FORCE_DRY
-#define FIRMWARE_VERSION  "6.5.9-dry"
+#define FIRMWARE_VERSION  "6.5.10-dry"
 #else
-#define FIRMWARE_VERSION  "6.5.9"
+#define FIRMWARE_VERSION  "6.5.10"
 #endif
 
 enum GrowStage {
