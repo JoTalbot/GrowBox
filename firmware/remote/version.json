@@ -1,5 +1,5 @@
 {
-  "version": "6.5.7",
-  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.7/GrowBox-v6.5.7.bin",
-  "notes": "Expanded ESP32 OTA partitions for 4MB flash; preserves full Telegram button UI"
+  "version": "6.5.8",
+  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.8/GrowBox-v6.5.8.bin",
+  "notes": "Fix UTF-8 Telegram transport and add one-time 4MB factory image for the expanded OTA partition layout"
 }
