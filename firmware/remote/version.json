@@ -1,5 +1,5 @@
 {
-  "version": "6.5.16",
-  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.16/GrowBox-v6.5.16.bin",
-  "notes": "Telegram keyboard fix: normalize Cyrillic button labels before command dispatch"
+  "version": "6.5.17",
+  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.17/GrowBox-v6.5.17.bin",
+  "notes": "Robust Telegram keyboard matching for Cyrillic labels and emoji variants"
 }
