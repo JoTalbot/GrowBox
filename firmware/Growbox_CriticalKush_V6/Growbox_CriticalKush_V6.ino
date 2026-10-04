@@ -48,9 +48,9 @@
 
 #define WDT_TIMEOUT_SEC   45
 #ifdef GROWBOX_FORCE_DRY
-#define FIRMWARE_VERSION  "6.5.7-dry"
+#define FIRMWARE_VERSION  "6.5.8-dry"
 #else
-#define FIRMWARE_VERSION  "6.5.7"
+#define FIRMWARE_VERSION  "6.5.8"
 #endif
 
 enum GrowStage {
@@ -597,19 +597,21 @@ int getGrowDay() {
 }
 
 String urlEncode(const String& value) {
+  // URL-encode UTF-8 byte-by-byte. Cast to uint8_t because char may be signed.
   String encoded;
   encoded.reserve(value.length() * 3 / 2);
   const char* hex = "0123456789ABCDEF";
   for (size_t i = 0; i < value.length(); i++) {
-    char c = value[i];
-    if (isalnum((unsigned char)c) || c == '-' || c == '_' || c == '.' || c == '~') {
-      encoded += c;
-    } else if (c == ' ') {
+    uint8_t b = static_cast<uint8_t>(value[i]);
+    if ((b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z') ||
+        (b >= '0' && b <= '9') || b == '-' || b == '_' || b == '.' || b == '~') {
+      encoded += static_cast<char>(b);
+    } else if (b == ' ') {
       encoded += '+';
     } else {
       encoded += '%';
-      encoded += hex[(c >> 4) & 0x0F];
-      encoded += hex[c & 0x0F];
+      encoded += hex[(b >> 4) & 0x0F];
+      encoded += hex[b & 0x0F];
     }
   }
   return encoded;
