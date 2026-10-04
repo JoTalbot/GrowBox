@@ -51,7 +51,7 @@
 #ifdef GROWBOX_FORCE_DRY
 #define FIRMWARE_VERSION  "6.5.13-dry"
 #else
-#define FIRMWARE_VERSION  "6.5.13"
+#define FIRMWARE_VERSION  "6.5.14"
 #endif
 
 enum GrowStage {
@@ -626,23 +626,45 @@ String urlEncode(const String& value) {
 }
 
 void sendTelegramHttp(String msg, const String& keyboard = "") {
-  if (!tgEnabled || tgBotToken.length() < 15 || tgChatId.length() < 3) return;
-  if (WiFi.status() != WL_CONNECTED) return;
+  if (!tgEnabled || tgBotToken.length() < 15 || tgChatId.length() < 3) {
+    tgLastError = "telegram disabled/not configured";
+    return;
+  }
+  if (WiFi.status() != WL_CONNECTED) {
+    tgLastError = "wifi disconnected";
+    return;
+  }
 
   feedWatchdog();
   WiFiClientSecure client;
   client.setInsecure();
-  client.setTimeout(3000);
-  if (client.connect("api.telegram.org", 443)) {
-    String payload = "chat_id=" + urlEncode(tgChatId) + "&text=" + urlEncode(msg) + "&parse_mode=HTML";
-    if (keyboard.length() > 0) payload += "&reply_markup=" + urlEncode(keyboard);
-    client.print(String("POST /bot") + tgBotToken + "/sendMessage HTTP/1.1\r\n" +
-                 "Host: api.telegram.org\r\n" +
-                 "Content-Type: application/x-www-form-urlencoded\r\n" +
-                 "Content-Length: " + payload.length() + "\r\n" +
-                 "Connection: close\r\n\r\n" + payload);
+  HTTPClient http;
+  http.setTimeout(5000);
+  http.setUserAgent("GrowBox/" FIRMWARE_VERSION);
+
+  String url = String("https://api.telegram.org/bot") + tgBotToken + "/sendMessage";
+  if (!http.begin(client, url)) {
+    tgLastError = "http begin failed";
+    tgLastHttpCode = 0;
+    return;
   }
-  client.stop();
+
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  String payload = "chat_id=" + urlEncode(tgChatId) +
+                   "&text=" + urlEncode(msg) +
+                   "&parse_mode=HTML";
+  if (keyboard.length() > 0) payload += "&reply_markup=" + urlEncode(keyboard);
+
+  int code = http.POST(payload);
+  tgLastHttpCode = code;
+  if (code >= 200 && code < 300) {
+    tgLastError = "-";
+  } else {
+    String body = http.getString();
+    if (body.length() > 240) body = body.substring(0, 240);
+    tgLastError = "HTTP " + String(code) + " " + body;
+  }
+  http.end();
   feedWatchdog();
 }
 
@@ -989,53 +1011,117 @@ void handleTelegramCommand(String cmd) {
   }
 }
 
+String telegramJsonUnescape(const String& in) {
+  String out;
+  out.reserve(in.length());
+  bool esc = false;
+  for (size_t i = 0; i < in.length(); i++) {
+    char ch = in[i];
+    if (esc) {
+      if (ch == 'n') out += '\\n';
+      else if (ch == 'r') out += '\\r';
+      else if (ch == 't') out += '\\t';
+      else out += ch;
+      esc = false;
+    } else if (ch == '\\\\') {
+      esc = true;
+    } else {
+      out += ch;
+    }
+  }
+  if (esc) out += '\\\\';
+  return out;
+}
+
 void checkTelegramUpdates() {
-  if (!tgEnabled || tgBotToken.length() < 15 || tgChatId.length() < 3) return;
-  if (WiFi.status() != WL_CONNECTED) return;
+  if (!tgEnabled || tgBotToken.length() < 15 || tgChatId.length() < 3) {
+    tgLastError = "telegram disabled/not configured";
+    return;
+  }
+  if (WiFi.status() != WL_CONNECTED) {
+    tgLastError = "wifi disconnected";
+    return;
+  }
 
   feedWatchdog();
   WiFiClientSecure client;
   client.setInsecure();
-  client.setTimeout(2500);
+  HTTPClient http;
+  http.setTimeout(5000);
+  http.setUserAgent("GrowBox/" FIRMWARE_VERSION);
 
-  if (client.connect("api.telegram.org", 443)) {
-    String url = "/bot" + tgBotToken + "/getUpdates?offset=" + String(lastTgUpdateId + 1) + "&limit=3&timeout=0";
-    client.print(String("GET ") + url + " HTTP/1.1\r\nHost: api.telegram.org\r\nConnection: close\r\n\r\n");
-
-    String response = "";
-    unsigned long st = millis();
-    while (client.connected() && millis() - st < 2000) {
-      while (client.available()) {
-        char c = client.read();
-        if (response.length() < 3000) response += c;
-      }
-    }
-    client.stop();
-
-    int updateIndex = response.indexOf("\"update_id\":");
-    while (updateIndex != -1) {
-      int idEnd = response.indexOf(",", updateIndex);
-      if (idEnd != -1) {
-        long uId = response.substring(updateIndex + 12, idEnd).toInt();
-        if (uId > lastTgUpdateId) lastTgUpdateId = uId;
-      }
-
-      int chatIdx = response.indexOf("\"chat\":{\"id\":", updateIndex);
-      if (chatIdx != -1) {
-        int chatEnd = response.indexOf(",", chatIdx);
-        String senderChat = response.substring(chatIdx + 13, chatEnd);
-        senderChat.trim();
-
-        int textIdx = response.indexOf("\"text\":\"", updateIndex);
-        if (textIdx != -1 && (textIdx < response.indexOf("\"update_id\":", updateIndex + 1) || response.indexOf("\"update_id\":", updateIndex + 1) == -1)) {
-          int textEnd = response.indexOf("\"", textIdx + 8);
-          String text = response.substring(textIdx + 8, textEnd);
-          if (senderChat == tgChatId) handleTelegramCommand(text);
-        }
-      }
-      updateIndex = response.indexOf("\"update_id\":", updateIndex + 1);
-    }
+  String url = String("https://api.telegram.org/bot") + tgBotToken +
+               "/getUpdates?offset=" + String(lastTgUpdateId + 1) +
+               "&limit=5&timeout=0";
+  if (!http.begin(client, url)) {
+    tgLastError = "getUpdates begin failed";
+    tgLastHttpCode = 0;
+    return;
   }
+
+  int code = http.GET();
+  tgLastHttpCode = code;
+  String response = http.getString();
+  http.end();
+
+  if (code < 200 || code >= 300) {
+    if (response.length() > 240) response = response.substring(0, 240);
+    tgLastError = "HTTP " + String(code) + " " + response;
+    feedWatchdog();
+    return;
+  }
+
+  if (response.indexOf("\"ok\":true") < 0) {
+    tgLastError = "Telegram API returned ok=false";
+    feedWatchdog();
+    return;
+  }
+
+  int updateIndex = response.indexOf("\"update_id\":");
+  while (updateIndex >= 0) {
+    int nextUpdate = response.indexOf("\"update_id\":", updateIndex + 12);
+    int chunkEnd = nextUpdate >= 0 ? nextUpdate : response.length();
+    String update = response.substring(updateIndex, chunkEnd);
+
+    int idEnd = update.indexOf(",");
+    if (idEnd > 0) {
+      long uId = update.substring(12, idEnd).toInt();
+      if (uId > lastTgUpdateId) lastTgUpdateId = uId;
+    }
+
+    int chatIdx = update.indexOf("\"chat\":{\"id\":");
+    int textIdx = update.indexOf("\"text\":\"");
+    if (chatIdx >= 0 && textIdx >= 0 && textIdx > chatIdx) {
+      int chatValue = chatIdx + 13;
+      int chatEnd = update.indexOf(",", chatValue);
+      String senderChat = chatEnd > chatValue ? update.substring(chatValue, chatEnd) : "";
+      senderChat.trim();
+
+      int textStart = textIdx + 8;
+      int textEnd = textStart;
+      bool esc = false;
+      while (textEnd < (int)update.length()) {
+        char ch = update[textEnd];
+        if (esc) {
+          esc = false;
+        } else if (ch == '\\\\') {
+          esc = true;
+        } else if (ch == '\"') {
+          break;
+        }
+        textEnd++;
+      }
+
+      if (senderChat == tgChatId && textEnd > textStart) {
+        String text = telegramJsonUnescape(update.substring(textStart, textEnd));
+        handleTelegramCommand(text);
+      }
+    }
+
+    updateIndex = nextUpdate;
+  }
+
+  tgLastError = "-";
   feedWatchdog();
 }
 
