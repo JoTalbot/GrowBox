@@ -807,7 +807,63 @@ bool applyTelegramMode(const String& cmd, const char* prefix, const char* dev, c
 void handleTelegramCommand(String cmd) {
   cmd.trim();
   String original = cmd;
-  cmd.toLowerCase();
+
+  // Arduino String::toLowerCase() is ASCII-only. Telegram buttons contain
+  // Cyrillic labels, so normalize the exact UI labels before ASCII commands.
+  if (cmd == "⬅️ Главное меню") cmd = "⬅️ главное меню";
+  else if (cmd == "🏠 Главное меню") cmd = "🏠 главное меню";
+  else if (cmd == "📊 Статус") cmd = "📊 статус";
+  else if (cmd == "🌡️ Климат") cmd = "🌡️ климат";
+  else if (cmd == "🪴 Почва") cmd = "🪴 почва";
+  else if (cmd == "⚡ Реле") cmd = "⚡ реле";
+  else if (cmd == "🚿 Полив") cmd = "🚿 полив";
+  else if (cmd == "🌱 Режим") cmd = "🌱 режим";
+  else if (cmd == "🔌 Датчики") cmd = "🔌 датчики";
+  else if (cmd == "⚙️ Настройки") cmd = "⚙️ настройки";
+  else if (cmd == "⚙️ Показать настройки") cmd = "⚙️ показать настройки";
+  else if (cmd == "📦 Обновления") cmd = "📦 обновления";
+  else if (cmd == "🛰️ Сервис") cmd = "🛰️ сервис";
+  else if (cmd == "📷 Камера") cmd = "📷 камера";
+  else if (cmd == "🔄 Всё AUTO") cmd = "🔄 всё auto";
+  else if (cmd == "🚿 Горшок 1") cmd = "🚿 горшок 1";
+  else if (cmd == "🚿 Горшок 2") cmd = "🚿 горшок 2";
+  else if (cmd == "🚿 Горшок 3") cmd = "🚿 горшок 3";
+  else if (cmd == "🌱 Вегетация") cmd = "🌱 вегетация";
+  else if (cmd == "🌸 Цветение") cmd = "🌸 цветение";
+  else if (cmd == "🍂 Сушка 60/60") cmd = "🍂 сушка 60/60";
+  else if (cmd == "📅 Сброс дня") cmd = "📅 сброс дня";
+  else if (cmd == "🔌 Обнаружить датчики") cmd = "🔌 обнаружить датчики";
+  else if (cmd == "🔌 Статус датчиков") cmd = "🔌 статус датчиков";
+  else if (cmd == "📦 Версия") cmd = "📦 версия";
+  else if (cmd == "🔎 Проверить OTA") cmd = "🔎 проверить ota";
+  else if (cmd == "🛰️ Remote ON") cmd = "🛰️ remote on";
+  else if (cmd == "🛰️ Remote OFF") cmd = "🛰️ remote off";
+  else if (cmd == "📥 Pull") cmd = "📥 pull";
+  else if (cmd == "🔁 Перезагрузка") cmd = "🔁 перезагрузка";
+  else if (cmd == "📷 Получить фото") cmd = "📷 получить фото";
+  else if (cmd == "⬅️ Реле") cmd = "⬅️ реле";
+  else if (cmd == "💡 Свет") cmd = "💡 свет";
+  else if (cmd == "🌀 Вытяжка") cmd = "🌀 вытяжка";
+  else if (cmd == "🔥 Обогрев") cmd = "🔥 обогрев";
+  else if (cmd == "💨 Обдув") cmd = "💨 обдув";
+  else if (cmd == "💧 Увлажнитель") cmd = "💧 увлажнитель";
+  else if (cmd == "💡 Свет ON") cmd = "💡 свет on";
+  else if (cmd == "💡 Свет OFF") cmd = "💡 свет off";
+  else if (cmd == "💡 Свет AUTO") cmd = "💡 свет auto";
+  else if (cmd == "🌀 Вытяжка ON") cmd = "🌀 вытяжка on";
+  else if (cmd == "🌀 Вытяжка OFF") cmd = "🌀 вытяжка off";
+  else if (cmd == "🌀 Вытяжка AUTO") cmd = "🌀 вытяжка auto";
+  else if (cmd == "🔥 Обогрев ON") cmd = "🔥 обогрев on";
+  else if (cmd == "🔥 Обогрев OFF") cmd = "🔥 обогрев off";
+  else if (cmd == "🔥 Обогрев AUTO") cmd = "🔥 обогрев auto";
+  else if (cmd == "💨 Обдув ON") cmd = "💨 обдув on";
+  else if (cmd == "💨 Обдув OFF") cmd = "💨 обдув off";
+  else if (cmd == "💨 Обдув AUTO") cmd = "💨 обдув auto";
+  else if (cmd == "💧 Увлажнитель ON") cmd = "💧 увлажнитель on";
+  else if (cmd == "💧 Увлажнитель OFF") cmd = "💧 увлажнитель off";
+  else if (cmd == "💧 Увлажнитель AUTO") cmd = "💧 увлажнитель auto";
+  else if (cmd == "⬅️ Главное меню") cmd = "⬅️ главное меню";
+  else cmd.toLowerCase();
 
   // Telegram UI: all core controls are available through buttons.
   if (cmd == "⬅️ главное меню" || cmd == "🏠 главное меню") { sendTelegramMenu("🌿 <b>GrowBox</b>\nВыберите раздел управления 👇", tgMainKeyboard()); return; }
