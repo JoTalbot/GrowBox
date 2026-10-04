@@ -49,7 +49,7 @@
 
 #define WDT_TIMEOUT_SEC   45
 #ifdef GROWBOX_FORCE_DRY
-#define FIRMWARE_VERSION  "6.5.13-dry"
+#define FIRMWARE_VERSION  "6.5.14-dry"
 #else
 #define FIRMWARE_VERSION  "6.5.14"
 #endif
