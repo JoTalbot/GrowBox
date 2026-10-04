@@ -230,6 +230,11 @@ String statusJson(const String& event);
 void handleSaveRemote();
 void handleRemotePull();
 void handleOtaCheck();
+#ifndef GROWBOX_ENABLE_MQTT
+void loadMqttSettings() {}
+void mqttLoop() {}
+void handleSaveMqtt() { server.send(503, "text/plain", "MQTT_DISABLED_IN_COMPACT_BUILD"); }
+#endif
 void handleAdmin();
 void handleReboot();
 void loadMqttSettings();
