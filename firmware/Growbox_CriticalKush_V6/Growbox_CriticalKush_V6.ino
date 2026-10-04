@@ -765,7 +765,7 @@ void handleTelegramCommand(String cmd) {
     s += "DHT22: " + String(dhtConnected ? "✅ GPIO " + String(dhtPin) : "❌ не найден") + "\n";
     s += "DS18B20: " + String(ds18Connected ? "✅ GPIO " + String(DS18_PIN) : "❌ нет") + "\n";
     for(int i=0;i<3;i++) s += "Почва #" + String(i+1) + ": " + String(soilConnected[i] ? "✅ GPIO " + String(soilPins[i]) : "❌ нет") + "\n";
-    s += "Автоопределение: " + String(sensorAutoDiscovery ? "ON" : "OFF");
+    s += "Автоопределение: " + String(sensorDiscoveryAuto ? "ON" : "OFF");
     sendTelegramMessage(s);
   }
   else if (cmd == "/status") {
