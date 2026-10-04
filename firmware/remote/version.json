@@ -1,5 +1,5 @@
 {
-  "version": "6.5.5",
-  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.5/GrowBox-v6.5.5.bin",
-  "notes": "Quiet version notifications, richer Telegram bot diagnostics and mobile-first web panel"
+  "version": "6.5.6",
+  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.6/GrowBox-v6.5.6.bin",
+  "notes": "Button-first Telegram control UI with emoji menus, relay submenus, watering and stage controls"
 }
