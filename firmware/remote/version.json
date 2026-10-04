@@ -1,5 +1,5 @@
 {
-  "version": "6.5.19",
-  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.19/GrowBox-v6.5.19.bin",
-  "notes": "Self-healing Auto OTA: retry failed updates, repair OTA policy, expose OTA diagnostics"
+  "version": "6.5.20",
+  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.20/GrowBox-v6.5.20.bin",
+  "notes": "Telegram compact control UI, status dashboard, watering controls, and light relay remap"
 }
