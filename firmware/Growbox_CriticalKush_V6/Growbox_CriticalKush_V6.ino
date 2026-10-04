@@ -763,7 +763,7 @@ void handleTelegramCommand(String cmd) {
   else if (cmd == "/discover") {
     String s = "🔌 <b>Датчики</b>\n";
     s += "DHT22: " + String(dhtConnected ? "✅ GPIO " + String(dhtPin) : "❌ не найден") + "\n";
-    s += "DS18B20: " + String(ds18Connected ? "✅ GPIO " + String(DS18_PIN) : "❌ нет") + "\n";
+    s += "DS18B20: " + String(ds18Connected ? "✅ GPIO " + String(ONE_WIRE_BUS) : "❌ нет") + "\n";
     for(int i=0;i<3;i++) s += "Почва #" + String(i+1) + ": " + String(soilConnected[i] ? "✅ GPIO " + String(soilPins[i]) : "❌ нет") + "\n";
     s += "Автоопределение: " + String(sensorDiscoveryAuto ? "ON" : "OFF");
     sendTelegramMessage(s);
