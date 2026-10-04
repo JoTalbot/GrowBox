@@ -1,3 +1,4 @@
+#ifdef GROWBOX_ENABLE_MQTT
 // Home Assistant через MQTT Discovery (LAN Mosquitto).
 #define MQTT_MAX_PACKET_SIZE 2048
 #include <PubSubClient.h>
@@ -235,3 +236,5 @@ void handleSaveMqtt() {
   server.sendHeader("Location", "/");
   server.send(303);
 }
+
+#endif
