@@ -1115,6 +1115,14 @@ void handleApiData() {
   json += "\"tgEn\":" + String(tgEnabled ? 1 : 0) + ",";
   json += "\"camIp\":\"" + camIp + "\",";
   json += "\"fw\":\"" + String(FIRMWARE_VERSION) + "\",";
+  const esp_partition_t* runPart = esp_ota_get_running_partition();
+  const esp_partition_t* bootPart = esp_ota_get_boot_partition();
+  const esp_partition_t* nextPart = esp_ota_get_next_update_partition(runPart);
+  json += "\"otaRun\":\"" + String(runPart ? runPart->label : "?") + "\",";
+  json += "\"otaBoot\":\"" + String(bootPart ? bootPart->label : "?") + "\",";
+  json += "\"otaNext\":\"" + String(nextPart ? nextPart->label : "?") + "\",";
+  json += "\"otaSize\":" + String(runPart ? runPart->size : 0) + ",";
+  json += "\"otaAddr\":" + String(runPart ? runPart->address : 0) + ",";
   json += "\"dhtPin\":" + String(dhtPin) + ",";
   json += "\"soilPin1\":" + String(soilPins[0]) + ",";
   json += "\"soilPin2\":" + String(soilPins[1]) + ",";
