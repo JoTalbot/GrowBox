@@ -29,13 +29,14 @@ void loadRemoteSettings() {
   inboxUrl = prefs.getString("inboxUrl", inboxUrl);
   remoteEnabled = prefs.getBool("remEn", remoteEnabled);
   autoOta = prefs.getBool("autoOta", autoOta);
-  // One-time migration: older builds could persist autoOta=false. Enable the
-  // new reliable OTA policy once, while keeping the setting user-changeable later.
+  // One-time migration: enable the reliable OTA policy for existing devices.
+  // Policy v3 also repairs devices that were left with autoOta=false by an older
+  // build. After migration the setting remains user-changeable.
   int otaPolicyVersion = prefs.getInt("otaPolicyV", 0);
-  if (otaPolicyVersion < 2) {
+  if (otaPolicyVersion < 3) {
     autoOta = true;
     prefs.putBool("autoOta", true);
-    prefs.putInt("otaPolicyV", 2);
+    prefs.putInt("otaPolicyV", 3);
   }
   lastInboxId = prefs.getLong("inboxId", lastInboxId);
   String ns = prefs.getString("ntfySince", "");
@@ -161,14 +162,8 @@ void requestOta(const String& url) {
     lastRemoteEvent = "ota-bad-url";
     return;
   }
-  prefs.begin("growbox", true);
-  String already = prefs.getString("lastOta", "");
-  prefs.end();
-  if (already == u) {
-    lastOtaResult = "same";
-    lastRemoteEvent = "ota-skip-same";
-    return;
-  }
+  // Never permanently suppress a URL after a failed/rolled-back OTA.
+  // The running firmware version is the authoritative success marker.
   otaPendingUrl = u;
   otaPending = true;
   lastRemoteEvent = "ota-queued";
@@ -180,9 +175,8 @@ void performPendingOta() {
   String url = otaPendingUrl;
   lastOtaResult = "flashing";
   lastRemoteEvent = "ota-start";
-  prefs.begin("growbox", false);
-  prefs.putString("lastOta", url);
-  prefs.end();
+  // Do not mark the URL as successful before flashing. If the update fails
+  // or the boot rolls back, the next automatic check must retry it.
   publishRemoteStatus("ota-start");
   sendTelegramMessage("📦 <b>OTA:</b> качаю " + url);
 
@@ -221,6 +215,10 @@ void performPendingOta() {
       publishRemoteStatus("ota-boot-select-fail");
       return;
     }
+    prefs.begin("growbox", false);
+    prefs.putString("lastOta", url);
+    prefs.putString("otaLastAttempt", url);
+    prefs.end();
     String diag = String("OTA boot -> ") + next->label +
                   " (running=" + (running ? running->label : "?") +
                   ", previousBoot=" + (boot ? boot->label : "?") + ")";
@@ -259,7 +257,7 @@ void checkVersionFile(bool flashIfNewer, bool notify) {
   }
   String ver = jsonGet(body, "version");
   String url = jsonGet(body, "url");
-  lastRemoteEvent = "version=" + ver;
+  lastRemoteEvent = "version=" + ver + " url=" + url;
   if (ver.length() == 0) {
     if (notify) sendTelegramMessage("📦 version.json без поля version");
     return;
