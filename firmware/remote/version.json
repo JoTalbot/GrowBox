@@ -1,5 +1,5 @@
 {
-  "version": "6.5.14",
-  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.14/GrowBox-v6.5.14.bin",
-  "notes": "Telegram transport and polling hardened with HTTPClient, API diagnostics, and robust UTF-8 command parsing"
+  "version": "6.5.15",
+  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.15/GrowBox-v6.5.15.bin",
+  "notes": "Telegram polling recovery after OTA: validates bot, clears stale webhook, fixes JSON escape parsing, and exposes diagnostics"
 }
