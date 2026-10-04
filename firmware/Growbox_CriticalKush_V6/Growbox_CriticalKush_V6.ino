@@ -170,6 +170,8 @@ bool thermalShutdown = false;
 
 String tgBotToken = "";
 String tgChatId   = "";
+String tgLastError = "-";
+int tgLastHttpCode = 0;
 String camIp      = "http://esp32-cam.local";
 bool tgEnabled    = false;
 long lastTgUpdateId = 0;
