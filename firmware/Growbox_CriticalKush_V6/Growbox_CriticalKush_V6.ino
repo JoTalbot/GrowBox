@@ -49,9 +49,9 @@
 
 #define WDT_TIMEOUT_SEC   45
 #ifdef GROWBOX_FORCE_DRY
-#define FIRMWARE_VERSION  "6.5.11-dry"
+#define FIRMWARE_VERSION  "6.5.12-dry"
 #else
-#define FIRMWARE_VERSION  "6.5.11"
+#define FIRMWARE_VERSION  "6.5.12"
 #endif
 
 enum GrowStage {
