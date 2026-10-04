@@ -1,5 +1,5 @@
 {
-  "version": "6.5.15",
-  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.15/GrowBox-v6.5.15.bin",
-  "notes": "Telegram polling recovery after OTA: validates bot, clears stale webhook, fixes JSON escape parsing, and exposes diagnostics"
+  "version": "6.5.16",
+  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.16/GrowBox-v6.5.16.bin",
+  "notes": "Telegram keyboard fix: normalize Cyrillic button labels before command dispatch"
 }
