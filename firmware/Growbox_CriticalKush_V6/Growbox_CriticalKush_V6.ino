@@ -868,7 +868,7 @@ void handleTelegramCommand(String cmd) {
   // Robust Telegram UI normalization: Android/Telegram can vary emoji
   // variation selectors and Unicode presentation. Match Cyrillic labels by text,
   // not by the complete UTF-8 button string.
-  if (original.indexOf("Статус") >= 0) cmd = "📊 статус";
+  if (original.indexOf("Статус") >= 0 && original.indexOf("датчиков") < 0 && original.indexOf("Датчиков") < 0) cmd = "📊 статус";
   else if (original.indexOf("Климат") >= 0) cmd = "🌡️ климат";
   else if (original.indexOf("Почва") >= 0) cmd = "🪴 почва";
   else if (original.indexOf("Реле") >= 0 && original.indexOf("ON") < 0 && original.indexOf("OFF") < 0 && original.indexOf("AUTO") < 0) cmd = "⚡ реле";
