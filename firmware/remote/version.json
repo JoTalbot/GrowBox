@@ -1,5 +1,5 @@
 {
-  "version": "6.5.18",
-  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.18/GrowBox-v6.5.18.bin",
-  "notes": "Telegram JSON Unicode escape decoder for Cyrillic keyboard commands"
+  "version": "6.5.19",
+  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.19/GrowBox-v6.5.19.bin",
+  "notes": "Self-healing Auto OTA: retry failed updates, repair OTA policy, expose OTA diagnostics"
 }
