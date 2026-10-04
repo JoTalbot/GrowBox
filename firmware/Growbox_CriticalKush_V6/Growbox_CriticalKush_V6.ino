@@ -49,9 +49,9 @@
 
 #define WDT_TIMEOUT_SEC   45
 #ifdef GROWBOX_FORCE_DRY
-#define FIRMWARE_VERSION  "6.5.19-dry"
+#define FIRMWARE_VERSION  "6.5.20-dry"
 #else
-#define FIRMWARE_VERSION  "6.5.19"
+#define FIRMWARE_VERSION  "6.5.20"
 #endif
 
 enum GrowStage {
@@ -536,8 +536,10 @@ void applyManualRelays() {
     stateLight = false;
     lightPwmDuty = 0;
   }
-  setRelay(RELAY_LIGHT, stateLight);
-  analogWrite(PIN_LIGHT_PWM, lightPwmDuty);
+  // Legacy light relay is permanently ON. Logical "Свет" controls GPIO21.
+  setRelay(RELAY_LIGHT, true);
+  setRelay(RELAY_HUMIDIFIER, stateLight);
+  analogWrite(PIN_LIGHT_PWM, 255);
 
   if (modeExhaust == MODE_ON) stateExhaust = true;
   else if (modeExhaust == MODE_OFF) stateExhaust = false;
@@ -552,10 +554,9 @@ void applyManualRelays() {
   else if (modeFan == MODE_OFF) stateFan = false;
   setRelay(RELAY_FAN, stateFan);
 
-  if (modeHumid == MODE_ON) stateHumid = true;
-  else if (modeHumid == MODE_OFF) stateHumid = false;
-  if (!enableHumidifier && modeHumid != MODE_ON) stateHumid = false;
-  setRelay(RELAY_HUMIDIFIER, stateHumid);
+  // Humidifier is physically absent. GPIO21 is the new logical light output.
+  stateHumid = false;
+  setRelay(RELAY_HUMIDIFIER, stateLight);
 }
 
 bool setDeviceMode(const String& dev, OverrideMode mode) {
@@ -731,25 +732,28 @@ void sendTelegramMenu(String msg, const String& keyboard) {
 }
 
 String tgMainKeyboard() {
-  return "{\"keyboard\":[[\"📊 Статус\",\"🌡️ Климат\"],[\"🪴 Почва\",\"⚡ Реле\"],[\"🚿 Полив\",\"🌱 Режим\"],[\"🔌 Датчики\",\"⚙️ Настройки\"],[\"📦 Обновления\",\"🛰️ Сервис\"],[\"📷 Камера\",\"🔄 Всё AUTO\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
+  return "{\"keyboard\":[[\"📊 Статус\",\"⚙️ Настройки\"],[\"📦 Обновления\",\"🛰️ Сервис\"],[\"📷 Камера\",\"🔄 Всё AUTO\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
 }
 String tgBackKeyboard() {
   return "{\"keyboard\":[[\"⬅️ Главное меню\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
 }
+String tgStatusKeyboard() {
+  return "{\"keyboard\":[[\"🚿 Горшок 1\",\"🚿 Горшок 2\",\"🚿 Горшок 3\"],[\"💡 Свет ВКЛ\",\"💡 Свет ВЫКЛ\",\"💡 Свет AUTO\"],[\"🌀 Вент ВКЛ\",\"🌀 Вент ВЫКЛ\",\"🌀 Вент AUTO\"],[\"🔥 Тепл ВКЛ\",\"🔥 Тепл ВЫКЛ\",\"🔥 Тепл AUTO\"],[\"⬅️ Главное меню\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
+}
 String tgRelayKeyboard() {
-  return "{\"keyboard\":[[\"💡 Свет\",\"🌀 Вытяжка\"],[\"🔥 Обогрев\",\"💨 Обдув\"],[\"💧 Увлажнитель\",\"🔄 Всё AUTO\"],[\"⬅️ Главное меню\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
+  return "{\"keyboard\":[[\"💡 Свет\",\"🌀 Вент\"],[\"🔥 Тепл\",\"💨 Обдув\"],[\"🔄 Всё AUTO\"],[\"⬅️ Настройки\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
 }
 String tgWaterKeyboard() {
-  return "{\"keyboard\":[[\"🚿 Горшок 1\",\"🚿 Горшок 2\",\"🚿 Горшок 3\"],[\"⬅️ Главное меню\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
+  return "{\"keyboard\":[[\"🚿 Горшок 1\",\"🚿 Горшок 2\",\"🚿 Горшок 3\"],[\"⬅️ Статус\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
 }
 String tgStageKeyboard() {
   return "{\"keyboard\":[[\"🌱 Вегетация\",\"🌸 Цветение\"],[\"🍂 Сушка 60/60\",\"📅 Сброс дня\"],[\"⬅️ Главное меню\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
 }
 String tgSensorKeyboard() {
-  return "{\"keyboard\":[[\"🔌 Обнаружить датчики\",\"🔌 Статус датчиков\"],[\"⬅️ Главное меню\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
+  return "{\"keyboard\":[[\"🔌 Обнаружить датчики\",\"🔌 Статус датчиков\"],[\"⬅️ Настройки\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
 }
 String tgSettingsKeyboard() {
-  return "{\"keyboard\":[[\"⚙️ Показать настройки\",\"🔄 Всё AUTO\"],[\"⬅️ Главное меню\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
+  return "{\"keyboard\":[[\"⚙️ Показать настройки\",\"🔌 Датчики\"],[\"🌱 Режим\",\"⚡ Реле\"],[\"🔄 Всё AUTO\"],[\"⬅️ Главное меню\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
 }
 String tgUpdateKeyboard() {
   return "{\"keyboard\":[[\"📦 Версия\",\"🔎 Проверить OTA\"],[\"⬅️ Главное меню\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
@@ -1945,8 +1949,14 @@ void applyLight(bool autoOn, int autoPwm) {
     stateLight = autoOn;
     lightPwmDuty = autoPwm;
   }
-  setRelay(RELAY_LIGHT, stateLight);
-  analogWrite(PIN_LIGHT_PWM, lightPwmDuty);
+
+  // GPIO16 is the original light relay and is now a permanent power relay.
+  // The former humidifier output GPIO21 is repurposed as the controllable light.
+  setRelay(RELAY_LIGHT, true);
+  setRelay(RELAY_HUMIDIFIER, stateLight);
+  // Keep the legacy light PWM fully powered. The new light is relay-controlled.
+  analogWrite(PIN_LIGHT_PWM, 255);
+  stateHumid = false;
 }
 
 bool computeHumidAuto() {
@@ -2158,10 +2168,11 @@ void loop() {
       setRelay(RELAY_HEATER, stateHeater);
     }
 
-    bool autoHumid = computeHumidAuto();
-    stateHumid = applyOverride(modeHumid, autoHumid);
-    if (!enableHumidifier && modeHumid != MODE_ON) stateHumid = false;
-    setRelay(RELAY_HUMIDIFIER, stateHumid);
+    // No humidifier in the current hardware configuration.
+    // GPIO21 is controlled by applyLight() as the new light relay.
+    setRelay(RELAY_LIGHT, true);
+    setRelay(RELAY_HUMIDIFIER, stateLight);
+    stateHumid = false;
   }
 
   if (lastSensorRead != 0 && (lastHistoryLog == 0 || currentMillis - lastHistoryLog >= HISTORY_INTERVAL)) {
