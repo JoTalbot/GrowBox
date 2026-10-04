@@ -49,9 +49,9 @@
 
 #define WDT_TIMEOUT_SEC   45
 #ifdef GROWBOX_FORCE_DRY
-#define FIRMWARE_VERSION  "6.5.16-dry"
+#define FIRMWARE_VERSION  "6.5.17-dry"
 #else
-#define FIRMWARE_VERSION  "6.5.16"
+#define FIRMWARE_VERSION  "6.5.17"
 #endif
 
 enum GrowStage {
@@ -864,6 +864,45 @@ void handleTelegramCommand(String cmd) {
   else if (cmd == "💧 Увлажнитель AUTO") cmd = "💧 увлажнитель auto";
   else if (cmd == "⬅️ Главное меню") cmd = "⬅️ главное меню";
   else cmd.toLowerCase();
+
+  // Robust Telegram UI normalization: Android/Telegram can vary emoji
+  // variation selectors and Unicode presentation. Match Cyrillic labels by text,
+  // not by the complete UTF-8 button string.
+  if (original.indexOf("Статус") >= 0) cmd = "📊 статус";
+  else if (original.indexOf("Климат") >= 0) cmd = "🌡️ климат";
+  else if (original.indexOf("Почва") >= 0) cmd = "🪴 почва";
+  else if (original.indexOf("Реле") >= 0 && original.indexOf("ON") < 0 && original.indexOf("OFF") < 0 && original.indexOf("AUTO") < 0) cmd = "⚡ реле";
+  else if (original.indexOf("Полив") >= 0) cmd = "🚿 полив";
+  else if (original.indexOf("Режим") >= 0) cmd = "🌱 режим";
+  else if (original.indexOf("Датчики") >= 0) cmd = "🔌 датчики";
+  else if (original.indexOf("Показать настройки") >= 0 || original.indexOf("Настройки") >= 0) cmd = "⚙️ настройки";
+  else if (original.indexOf("Обновления") >= 0) cmd = "📦 обновления";
+  else if (original.indexOf("Сервис") >= 0) cmd = "🛰️ сервис";
+  else if (original.indexOf("Камера") >= 0 && original.indexOf("Получить") < 0) cmd = "📷 камера";
+  else if (original.indexOf("Всё AUTO") >= 0) cmd = "🔄 всё auto";
+  else if (original.indexOf("Горшок 1") >= 0) cmd = "🚿 горшок 1";
+  else if (original.indexOf("Горшок 2") >= 0) cmd = "🚿 горшок 2";
+  else if (original.indexOf("Горшок 3") >= 0) cmd = "🚿 горшок 3";
+  else if (original.indexOf("Вегетация") >= 0) cmd = "🌱 вегетация";
+  else if (original.indexOf("Цветение") >= 0) cmd = "🌸 цветение";
+  else if (original.indexOf("Сушка 60/60") >= 0) cmd = "🍂 сушка 60/60";
+  else if (original.indexOf("Сброс дня") >= 0) cmd = "📅 сброс дня";
+  else if (original.indexOf("Обнаружить датчики") >= 0) cmd = "🔌 обнаружить датчики";
+  else if (original.indexOf("Статус датчиков") >= 0) cmd = "🔌 статус датчиков";
+  else if (original.indexOf("Версия") >= 0) cmd = "📦 версия";
+  else if (original.indexOf("Проверить OTA") >= 0) cmd = "🔎 проверить ota";
+  else if (original.indexOf("Remote ON") >= 0) cmd = "🛰️ remote on";
+  else if (original.indexOf("Remote OFF") >= 0) cmd = "🛰️ remote off";
+  else if (original.indexOf("Pull") >= 0) cmd = "📥 pull";
+  else if (original.indexOf("Перезагрузка") >= 0) cmd = "🔁 перезагрузка";
+  else if (original.indexOf("Получить фото") >= 0) cmd = "📷 получить фото";
+  else if (original.indexOf("Свет") >= 0) cmd = "💡 свет" + (original.indexOf("ON") >= 0 ? " on" : (original.indexOf("OFF") >= 0 ? " off" : (original.indexOf("AUTO") >= 0 ? " auto" : "")));
+  else if (original.indexOf("Вытяжка") >= 0) cmd = "🌀 вытяжка" + (original.indexOf("ON") >= 0 ? " on" : (original.indexOf("OFF") >= 0 ? " off" : (original.indexOf("AUTO") >= 0 ? " auto" : "")));
+  else if (original.indexOf("Обогрев") >= 0) cmd = "🔥 обогрев" + (original.indexOf("ON") >= 0 ? " on" : (original.indexOf("OFF") >= 0 ? " off" : (original.indexOf("AUTO") >= 0 ? " auto" : "")));
+  else if (original.indexOf("Обдув") >= 0) cmd = "💨 обдув" + (original.indexOf("ON") >= 0 ? " on" : (original.indexOf("OFF") >= 0 ? " off" : (original.indexOf("AUTO") >= 0 ? " auto" : "")));
+  else if (original.indexOf("Увлажнитель") >= 0) cmd = "💧 увлажнитель" + (original.indexOf("ON") >= 0 ? " on" : (original.indexOf("OFF") >= 0 ? " off" : (original.indexOf("AUTO") >= 0 ? " auto" : "")));
+  else if (original.indexOf("Главное меню") >= 0) cmd = "⬅️ главное меню";
+  else if (original.indexOf("⬅") >= 0 && original.length() < 40) cmd = "⬅️ главное меню";
 
   // Telegram UI: all core controls are available through buttons.
   if (cmd == "⬅️ главное меню" || cmd == "🏠 главное меню") { sendTelegramMenu("🌿 <b>GrowBox</b>\nВыберите раздел управления 👇", tgMainKeyboard()); return; }
