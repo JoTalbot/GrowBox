@@ -1018,18 +1018,18 @@ String telegramJsonUnescape(const String& in) {
   for (size_t i = 0; i < in.length(); i++) {
     char ch = in[i];
     if (esc) {
-      if (ch == 'n') out += '\\n';
-      else if (ch == 'r') out += '\\r';
-      else if (ch == 't') out += '\\t';
+      if (ch == 'n') out += '\n';
+      else if (ch == 'r') out += '\r';
+      else if (ch == 't') out += '\t';
       else out += ch;
       esc = false;
-    } else if (ch == '\\\\') {
+    } else if (ch == '\\') {
       esc = true;
     } else {
       out += ch;
     }
   }
-  if (esc) out += '\\\\';
+  if (esc) out += '\\';
   return out;
 }
 void checkTelegramUpdates() {
