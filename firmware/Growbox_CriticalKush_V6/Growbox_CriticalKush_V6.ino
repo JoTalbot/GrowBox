@@ -49,9 +49,9 @@
 
 #define WDT_TIMEOUT_SEC   45
 #ifdef GROWBOX_FORCE_DRY
-#define FIRMWARE_VERSION  "6.5.21-dry"
+#define FIRMWARE_VERSION  "6.5.22-dry"
 #else
-#define FIRMWARE_VERSION  "6.5.21"
+#define FIRMWARE_VERSION  "6.5.22"
 #endif
 
 enum GrowStage {
@@ -731,6 +731,47 @@ void sendTelegramMenu(String msg, const String& keyboard) {
   sendTelegramHttp(msg, keyboard);
 }
 
+void sendTelegramInline(String msg, const String& inlineKeyboard) {
+  if (!tgEnabled || tgBotToken.length() < 15 || tgChatId.length() < 3 || WiFi.status() != WL_CONNECTED) return;
+  feedWatchdog();
+  WiFiClientSecure client;
+  client.setInsecure();
+  HTTPClient http;
+  http.setTimeout(5000);
+  http.setUserAgent("GrowBox/" FIRMWARE_VERSION);
+  String url = String("https://api.telegram.org/bot") + tgBotToken + "/sendMessage";
+  if (!http.begin(client, url)) {
+    tgLastError = "inline http begin failed";
+    tgLastHttpCode = 0;
+    return;
+  }
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  String payload = "chat_id=" + urlEncode(tgChatId) +
+                   "&text=" + urlEncode(msg) +
+                   "&parse_mode=HTML" +
+                   "&reply_markup=" + urlEncode(inlineKeyboard);
+  int code = http.POST(payload);
+  tgLastHttpCode = code;
+  tgLastError = (code >= 200 && code < 300) ? "-" : ("inline HTTP " + String(code));
+  http.end();
+  feedWatchdog();
+}
+
+void answerTelegramCallback(const String& callbackId, const String& text = "") {
+  if (!tgEnabled || callbackId.length() < 3 || WiFi.status() != WL_CONNECTED) return;
+  WiFiClientSecure client;
+  client.setInsecure();
+  HTTPClient http;
+  http.setTimeout(5000);
+  String url = String("https://api.telegram.org/bot") + tgBotToken + "/answerCallbackQuery";
+  if (!http.begin(client, url)) return;
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  String payload = "callback_query_id=" + urlEncode(callbackId);
+  if (text.length()) payload += "&text=" + urlEncode(text);
+  tgLastHttpCode = http.POST(payload);
+  http.end();
+}
+
 String tgMainKeyboard() {
   return "{\"keyboard\":[[\"📊 Статус\",\"⚙️ Настройки\"],[\"📦 Обновления\",\"🛰️ Сервис\"],[\"📷 Камера\",\"🔄 Всё AUTO\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
 }
@@ -738,7 +779,10 @@ String tgBackKeyboard() {
   return "{\"keyboard\":[[\"⬅️ Главное меню\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
 }
 String tgStatusKeyboard() {
-  return "{\"keyboard\":[[\"🚿 Горшок 1\",\"🚿 Горшок 2\",\"🚿 Горшок 3\"],[\"💡 Свет ВКЛ\",\"💡 Свет ВЫКЛ\",\"💡 Свет AUTO\"],[\"🌀 Вент ВКЛ\",\"🌀 Вент ВЫКЛ\",\"🌀 Вент AUTO\"],[\"🔥 Тепл ВКЛ\",\"🔥 Тепл ВЫКЛ\",\"🔥 Тепл AUTO\"],[\"⬅️ Главное меню\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
+  return "{\"keyboard\":[[\"💡 Свет ВКЛ\",\"💡 Свет ВЫКЛ\",\"💡 Свет AUTO\"],[\"🌀 Вент ВКЛ\",\"🌀 Вент ВЫКЛ\",\"🌀 Вент AUTO\"],[\"🔥 Тепл ВКЛ\",\"🔥 Тепл ВЫКЛ\",\"🔥 Тепл AUTO\"],[\"⬅️ Главное меню\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
+}
+String tgStatusInlineKeyboard() {
+  return "{\"inline_keyboard\":[[{\"text\":\"🚿 Горшок 1\",\"callback_data\":\"water:0\"},{\"text\":\"🚿 Горшок 2\",\"callback_data\":\"water:1\"},{\"text\":\"🚿 Горшок 3\",\"callback_data\":\"water:2\"}]]}";
 }
 String tgRelayKeyboard() {
   return "{\"keyboard\":[[\"💡 Свет\",\"🌀 Вент\"],[\"🔥 Тепл\",\"💨 Обдув\"],[\"🔄 Всё AUTO\"],[\"⬅️ Настройки\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
@@ -1096,7 +1140,7 @@ void handleTelegramCommand(String cmd) {
     s += " Обогрев=" + String(stateHeater ? "ВКЛ" : "ВЫКЛ") + " [" + modeShort(modeHeater) + "]\n";
     s += " Обдув=" + String(stateFan ? "ВКЛ" : "ВЫКЛ") + " [" + modeShort(modeFan) + "]\n";
     s += " Увлажн=" + String(stateHumid ? "ВКЛ" : "ВЫКЛ") + " [" + modeShort(modeHumid) + "]";
-    sendTelegramMenu(s, tgStatusKeyboard());
+    sendTelegramInline(s, tgStatusInlineKeyboard());
   }
   else if (cmd == "/settings") {
     String s = "⚙️ <b>Настройки v" + String(FIRMWARE_VERSION) + "</b>\n";
@@ -1281,6 +1325,33 @@ void checkTelegramUpdates() {
     if (idEnd > 0) {
       long uId = update.substring(12, idEnd).toInt();
       if (uId > lastTgUpdateId) lastTgUpdateId = uId;
+    }
+
+    int callbackIdx = update.indexOf("\"callback_query\":");
+    if (callbackIdx >= 0) {
+      int callbackIdIdx = update.indexOf("\"id\":\"", callbackIdx);
+      int callbackIdEnd = callbackIdIdx >= 0 ? update.indexOf("\"", callbackIdIdx + 6) : -1;
+      int callbackDataIdx = update.indexOf("\"data\":\"", callbackIdx);
+      int callbackDataEnd = callbackDataIdx >= 0 ? update.indexOf("\"", callbackDataIdx + 8) : -1;
+      int callbackChatIdx = update.indexOf("\"chat\":{\"id\":", callbackIdx);
+      int callbackChatEnd = callbackChatIdx >= 0 ? update.indexOf(",", callbackChatIdx + 13) : -1;
+      String callbackId = (callbackIdIdx >= 0 && callbackIdEnd > callbackIdIdx) ? update.substring(callbackIdIdx + 6, callbackIdEnd) : "";
+      String callbackData = (callbackDataIdx >= 0 && callbackDataEnd > callbackDataIdx) ? telegramJsonUnescape(update.substring(callbackDataIdx + 8, callbackDataEnd)) : "";
+      String callbackChat = (callbackChatIdx >= 0 && callbackChatEnd > callbackChatIdx) ? update.substring(callbackChatIdx + 13, callbackChatEnd) : "";
+      callbackChat.trim();
+
+      if (callbackChat == tgChatId && callbackData.length() > 0) {
+        if (callbackData == "water:0") {
+          answerTelegramCallback(callbackId, "Полив горшка #1");
+          triggerWatering(0);
+        } else if (callbackData == "water:1") {
+          answerTelegramCallback(callbackId, "Полив горшка #2");
+          triggerWatering(1);
+        } else if (callbackData == "water:2") {
+          answerTelegramCallback(callbackId, "Полив горшка #3");
+          triggerWatering(2);
+        }
+      }
     }
 
     int chatIdx = update.indexOf("\"chat\":{\"id\":");
