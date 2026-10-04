@@ -49,9 +49,9 @@
 
 #define WDT_TIMEOUT_SEC   45
 #ifdef GROWBOX_FORCE_DRY
-#define FIRMWARE_VERSION  "6.5.18-dry"
+#define FIRMWARE_VERSION  "6.5.19-dry"
 #else
-#define FIRMWARE_VERSION  "6.5.18"
+#define FIRMWARE_VERSION  "6.5.19"
 #endif
 
 enum GrowStage {
@@ -1409,6 +1409,10 @@ void handleApiData() {
   json += "\"vpdMax\":" + String(vmax, 2) + ",";
   json += "\"remoteEn\":" + String(remoteEnabled ? 1 : 0) + ",";
   json += "\"autoOta\":" + String(autoOta ? 1 : 0) + ",";
+  json += "\"otaPending\":" + String(otaPending ? 1 : 0) + ",";
+  json += "\"otaTarget\":\"" + otaPendingUrl + "\",";
+  json += "\"otaCheckAgeMs\":" + String((unsigned long)(millis() - lastVersionCheck)) + ",";
+  json += "\"otaVersionUrl\":\"" + versionUrl + "\",";
   json += "\"ntfyOn\":" + String(ntfyTopic.length() > 4 ? 1 : 0) + ",";
   json += "\"devId\":\"" + deviceId() + "\",";
   json += "\"rEvent\":\"" + lastRemoteEvent + "\",";
