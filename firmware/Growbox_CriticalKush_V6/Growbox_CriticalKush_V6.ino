@@ -49,9 +49,9 @@
 
 #define WDT_TIMEOUT_SEC   45
 #ifdef GROWBOX_FORCE_DRY
-#define FIRMWARE_VERSION  "6.5.17-dry"
+#define FIRMWARE_VERSION  "6.5.18-dry"
 #else
-#define FIRMWARE_VERSION  "6.5.17"
+#define FIRMWARE_VERSION  "6.5.18"
 #endif
 
 enum GrowStage {
@@ -1166,17 +1166,54 @@ String telegramJsonUnescape(const String& in) {
   bool esc = false;
   for (size_t i = 0; i < in.length(); i++) {
     char ch = in[i];
-    if (esc) {
-      if (ch == 'n') out += '\n';
-      else if (ch == 'r') out += '\r';
-      else if (ch == 't') out += '\t';
+    if (!esc) {
+      if (ch == '\\') esc = true;
       else out += ch;
-      esc = false;
-    } else if (ch == '\\') {
-      esc = true;
+      continue;
+    }
+
+    if (ch == 'n') out += '\n';
+    else if (ch == 'r') out += '\r';
+    else if (ch == 't') out += '\t';
+    else if (ch == 'b') out += '\b';
+    else if (ch == 'f') out += '\f';
+    else if (ch == '"') out += '"';
+    else if (ch == '\\') out += '\\';
+    else if (ch == '/') out += '/';
+    else if (ch == 'u' && i + 4 < in.length()) {
+      // Decode JSON \\uXXXX escapes to UTF-8 so Cyrillic Telegram buttons
+      // remain usable even when Telegram serializes Unicode as escaped JSON.
+      uint16_t cp = 0;
+      bool valid = true;
+      for (int k = 0; k < 4; k++) {
+        char h = in[i + 1 + k];
+        uint8_t v = 0;
+        if (h >= '0' && h <= '9') v = h - '0';
+        else if (h >= 'a' && h <= 'f') v = h - 'a' + 10;
+        else if (h >= 'A' && h <= 'F') v = h - 'A' + 10;
+        else { valid = false; break; }
+        cp = (uint16_t)((cp << 4) | v);
+      }
+      if (valid) {
+        i += 4;
+        if (cp < 0x80) {
+          out += (char)cp;
+        } else if (cp < 0x800) {
+          out += (char)(0xC0 | (cp >> 6));
+          out += (char)(0x80 | (cp & 0x3F));
+        } else {
+          out += (char)(0xE0 | (cp >> 12));
+          out += (char)(0x80 | ((cp >> 6) & 0x3F));
+          out += (char)(0x80 | (cp & 0x3F));
+        }
+      } else {
+        out += '\\';
+        out += 'u';
+      }
     } else {
       out += ch;
     }
+    esc = false;
   }
   if (esc) out += '\\';
   return out;
