@@ -1,5 +1,5 @@
 {
-  "version": "6.5.9",
-  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.9/GrowBox-v6.5.9.bin",
-  "notes": "Automatic OTA version checks independent of Remote/ntfy; Telegram UTF-8 transport fixed; includes 4MB factory image"
+  "version": "6.5.10",
+  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.10/GrowBox-v6.5.10.bin",
+  "notes": "OTA explicitly selects and verifies the new boot partition before reboot; one-time migration enables reliable automatic OTA; Telegram UTF-8 fix retained"
 }
