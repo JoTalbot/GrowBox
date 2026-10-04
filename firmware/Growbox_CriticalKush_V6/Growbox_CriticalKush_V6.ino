@@ -49,9 +49,9 @@
 
 #define WDT_TIMEOUT_SEC   45
 #ifdef GROWBOX_FORCE_DRY
-#define FIRMWARE_VERSION  "6.5.14-dry"
+#define FIRMWARE_VERSION  "6.5.15-dry"
 #else
-#define FIRMWARE_VERSION  "6.5.14"
+#define FIRMWARE_VERSION  "6.5.15"
 #endif
 
 enum GrowStage {
@@ -627,6 +627,58 @@ String urlEncode(const String& value) {
   return encoded;
 }
 
+void telegramInit() {
+  if (!tgEnabled || tgBotToken.length() < 15 || tgChatId.length() < 3) {
+    tgLastError = "telegram disabled/not configured";
+    return;
+  }
+  if (WiFi.status() != WL_CONNECTED) {
+    tgLastError = "wifi disconnected";
+    return;
+  }
+
+  WiFiClientSecure client;
+  client.setInsecure();
+  HTTPClient http;
+  http.setTimeout(5000);
+  http.setUserAgent("GrowBox/" FIRMWARE_VERSION);
+
+  String base = String("https://api.telegram.org/bot") + tgBotToken + "/";
+  if (!http.begin(client, base + "getMe")) {
+    tgLastError = "getMe begin failed";
+    tgLastHttpCode = 0;
+    return;
+  }
+  int code = http.GET();
+  String body = http.getString();
+  http.end();
+  tgLastHttpCode = code;
+  if (code < 200 || code >= 300 || body.indexOf("\"ok\":true") < 0) {
+    if (body.length() > 220) body = body.substring(0, 220);
+    tgLastError = "getMe HTTP " + String(code) + " " + body;
+    return;
+  }
+
+  // This firmware uses polling, not webhook delivery. Remove any stale webhook
+  // left by an earlier bot integration so getUpdates can work reliably.
+  if (!http.begin(client, base + "deleteWebhook?drop_pending_updates=false")) {
+    tgLastError = "deleteWebhook begin failed";
+    tgLastHttpCode = 0;
+    return;
+  }
+  code = http.GET();
+  body = http.getString();
+  http.end();
+  tgLastHttpCode = code;
+  if (code < 200 || code >= 300 || body.indexOf("\"ok\":true") < 0) {
+    if (body.length() > 220) body = body.substring(0, 220);
+    tgLastError = "deleteWebhook HTTP " + String(code) + " " + body;
+    return;
+  }
+
+  tgLastError = "-";
+}
+
 void sendTelegramHttp(String msg, const String& keyboard = "") {
   if (!tgEnabled || tgBotToken.length() < 15 || tgChatId.length() < 3) {
     tgLastError = "telegram disabled/not configured";
@@ -1105,7 +1157,7 @@ void checkTelegramUpdates() {
         char ch = update[textEnd];
         if (esc) {
           esc = false;
-        } else if (ch == '\\\\') {
+        } else if (ch == '\\') {
           esc = true;
         } else if (ch == '\"') {
           break;
@@ -1202,6 +1254,12 @@ void handleApiData() {
   json += "\"tgEn\":" + String(tgEnabled ? 1 : 0) + ",";
   json += "\"camIp\":\"" + camIp + "\",";
   json += "\"fw\":\"" + String(FIRMWARE_VERSION) + "\",";
+  json += "\"tgEnabled\":" + String(tgEnabled ? 1 : 0) + ",";
+  json += "\"tgHttp\":" + String(tgLastHttpCode) + ",";
+  String tgErr = tgLastError;
+  tgErr.replace("\\", "/");
+  tgErr.replace("\"", "'");
+  json += "\"tgError\":\"" + tgErr + "\",";
   const esp_partition_t* runPart = esp_ota_get_running_partition();
   const esp_partition_t* bootPart = esp_ota_get_boot_partition();
   const esp_partition_t* nextPart = esp_ota_get_next_update_partition(runPart);
@@ -1702,6 +1760,8 @@ void setup() {
   }
 
   startWatchdog();
+  // Telegram uses long-polling. Clear stale webhook state after every boot/OTA.
+  telegramInit();
   MDNS.begin("growbox");
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
 
