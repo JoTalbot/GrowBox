@@ -1,5 +1,5 @@
 name: Build firmware
-# [release] v6.5.1 final mobile + heater fail-safe
+# [release] v6.5.8 Telegram UTF-8 + factory image
 
 on:
   workflow_dispatch:
@@ -35,6 +35,8 @@ jobs:
           cp .pio/build/esp32dev/firmware.bin "dist/$MAIN"
           cp .pio/build/esp32dev_dry/firmware.bin "dist/${MAIN%.bin}-dry.bin"
           cp firmware/Growbox_OTA_Service/.pio/build/ota_service/firmware.bin dist/GrowBox-OTA-Service.bin
+          python -m pip install -U esptool
+          esptool merge-bin -o "dist/GrowBox-v${VERSION}-factory-4MB.bin" --flash-mode dio --flash-freq 40m --flash-size 4MB 0x1000 .pio/build/esp32dev/bootloader.bin 0x8000 .pio/build/esp32dev/partitions.bin 0xe000 .pio/build/esp32dev/boot_app0.bin 0x10000 .pio/build/esp32dev/firmware.bin
           ls -lh dist
       - name: Upload artifact
         uses: actions/upload-artifact@v4
