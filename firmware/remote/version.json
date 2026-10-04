@@ -1,5 +1,5 @@
 {
-  "version": "6.5.13",
-  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.13/GrowBox-v6.5.13.bin",
-  "notes": "Adds runtime OTA running/boot/next partition diagnostics to /api/data; compact stock-slot OTA build"
+  "version": "6.5.14",
+  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.14/GrowBox-v6.5.14.bin",
+  "notes": "Telegram transport and polling hardened with HTTPClient, API diagnostics, and robust UTF-8 command parsing"
 }
