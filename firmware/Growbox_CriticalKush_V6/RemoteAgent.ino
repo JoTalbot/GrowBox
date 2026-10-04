@@ -175,73 +175,158 @@ void performPendingOta() {
   String url = otaPendingUrl;
   lastOtaResult = "flashing";
   lastRemoteEvent = "ota-start";
-  // Do not mark the URL as successful before flashing. If the update fails
-  // or the boot rolls back, the next automatic check must retry it.
   publishRemoteStatus("ota-start");
   sendTelegramMessage("📦 <b>OTA:</b> качаю " + url);
 
-  feedWatchdog();
-  httpUpdate.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-  // Do not let HTTPUpdate reboot before we verify and explicitly select the
-  // newly written OTA partition. This prevents a successful download followed
-  // by a reboot into the previous firmware slot.
-  httpUpdate.rebootOnUpdate(false);
-  httpUpdate.onProgress([](int cur, int total) {
-    feedWatchdog();
-  });
-
-  t_httpUpdate_return ret;
-  if (url.startsWith("https://")) {
-    WiFiClientSecure client;
-    client.setInsecure();
-    client.setTimeout(20);
-    ret = httpUpdate.update(client, url);
-  } else {
-    WiFiClient client;
-    client.setTimeout(20);
-    ret = httpUpdate.update(client, url);
-  }
-  if (ret == HTTP_UPDATE_OK) {
-    const esp_partition_t* running = esp_ota_get_running_partition();
-    const esp_partition_t* next = esp_ota_get_next_update_partition(running);
-    const esp_partition_t* boot = esp_ota_get_boot_partition();
-    if (next == nullptr || esp_ota_set_boot_partition(next) != ESP_OK) {
-      lastOtaResult = "boot partition select failed";
-      lastRemoteEvent = "ota-boot-select-fail";
-      prefs.begin("growbox", false);
-      prefs.putString("lastOta", "");
-      prefs.end();
-      sendTelegramMessage("❌ OTA: прошивка записана, но не удалось выбрать новый OTA-раздел");
-      publishRemoteStatus("ota-boot-select-fail");
-      return;
-    }
-    prefs.begin("growbox", false);
-    prefs.putString("lastOta", url);
-    prefs.putString("otaLastAttempt", url);
-    prefs.end();
-    String diag = String("OTA boot -> ") + next->label +
-                  " (running=" + (running ? running->label : "?") +
-                  ", previousBoot=" + (boot ? boot->label : "?") + ")";
-    lastOtaResult = diag;
-    lastRemoteEvent = "ota-ready-reboot";
-    publishRemoteStatus("ota-ready-reboot");
-    sendTelegramMessage("✅ <b>OTA записана.</b> " + diag + "\n🔁 Перезагрузка...");
-    delay(350);
-    ESP.restart();
-
-  } else if (ret == HTTP_UPDATE_NO_UPDATES) {
-    lastOtaResult = "no-update";
-    lastRemoteEvent = "ota-none";
-    sendTelegramMessage("📦 OTA: обновлений нет");
-  } else {
-    lastOtaResult = httpUpdate.getLastErrorString();
+  if (WiFi.status() != WL_CONNECTED) {
+    lastOtaResult = "wifi disconnected";
     lastRemoteEvent = "ota-fail";
+    sendTelegramMessage("❌ OTA: WiFi отключен");
+    return;
+  }
+
+  feedWatchdog();
+  WiFiClientSecure secureClient;
+  WiFiClient plainClient;
+  if (url.startsWith("https://")) {
+    secureClient.setInsecure();
+    secureClient.setTimeout(20);
+  } else {
+    plainClient.setTimeout(20);
+  }
+
+  HTTPClient http;
+  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+  http.setTimeout(15000);
+  http.setUserAgent("GrowBox/" FIRMWARE_VERSION);
+
+  Client* client = url.startsWith("https://")
+      ? static_cast<Client*>(&secureClient)
+      : static_cast<Client*>(&plainClient);
+
+  if (!http.begin(*client, url)) {
+    lastOtaResult = "http begin failed";
+    lastRemoteEvent = "ota-fail";
+    sendTelegramMessage("❌ OTA: не удалось открыть URL");
+    return;
+  }
+
+  int code = http.GET();
+  if (code < 200 || code >= 300) {
+    lastOtaResult = String("HTTP ") + code;
+    lastRemoteEvent = "ota-fail";
+    sendTelegramMessage("❌ OTA: HTTP " + String(code));
+    http.end();
+    return;
+  }
+
+  int contentLength = http.getSize();
+  String ctype = http.header("Content-Type");
+  WiFiClient* stream = http.getStreamPtr();
+
+  uint32_t started = millis();
+  while (stream && !stream->available() && millis() - started < 5000) {
+    delay(10);
+    feedWatchdog();
+  }
+
+  int first = (stream && stream->available()) ? stream->read() : -1;
+  if (first != 0xE9) {
+    lastOtaResult = String("bad magic=0x") + String(first < 0 ? 255 : first, HEX) +
+                    " HTTP=" + String(code) + " size=" + String(contentLength) +
+                    " type=" + ctype;
+    lastRemoteEvent = "ota-invalid-header";
+    sendTelegramMessage("❌ OTA: Verify Bin Header Failed. " + lastOtaResult);
+    publishRemoteStatus("ota-invalid-header");
+    prefs.begin("growbox", false);
+    prefs.putString("lastOta", "");
+    prefs.end();
+    http.end();
+    return;
+  }
+
+  // We consumed the first byte for validation, so start Update with the stream
+  // after explicitly seeding the image header byte.
+  size_t totalWritten = 0;
+  bool writeOk = false;
+  int expectedSize = contentLength;
+  if (expectedSize <= 0 || expectedSize > 0x1E0000) {
+    lastOtaResult = "invalid content length " + String(expectedSize);
+  } else if (Update.begin((size_t)expectedSize)) {
+    uint8_t magic = 0xE9;
+    if (Update.write(&magic, 1) == 1) {
+      totalWritten = 1;
+      uint8_t buf[4096];
+      uint32_t lastData = millis();
+      while (stream && totalWritten < (size_t)expectedSize) {
+        size_t avail = stream->available();
+        if (!avail) {
+          if (millis() - lastData > 15000) break;
+          delay(5);
+          feedWatchdog();
+          continue;
+        }
+        size_t want = avail;
+        if (want > sizeof(buf)) want = sizeof(buf);
+        size_t n = stream->readBytes((char*)buf, want);
+        if (n == 0) break;
+        size_t wrote = Update.write(buf, n);
+        if (wrote != n) break;
+        totalWritten += wrote;
+        lastData = millis();
+        feedWatchdog();
+        yield();
+      }
+      writeOk = (totalWritten == (size_t)expectedSize && Update.end(true));
+    }
+  }
+
+  http.end();
+
+  if (!writeOk) {
+    lastOtaResult = Update.getErrorString();
+    if (lastOtaResult.length() == 0) {
+      lastOtaResult = "OTA write failed: " + String(totalWritten) + "/" + String(expectedSize);
+    }
+    lastRemoteEvent = "ota-fail";
+    Update.abort();
     prefs.begin("growbox", false);
     prefs.putString("lastOta", "");
     prefs.end();
     sendTelegramMessage("❌ OTA: " + lastOtaResult);
     publishRemoteStatus("ota-fail");
+    return;
   }
+
+  const esp_partition_t* running = esp_ota_get_running_partition();
+  const esp_partition_t* next = esp_ota_get_next_update_partition(running);
+  const esp_partition_t* boot = esp_ota_get_boot_partition();
+  if (next == nullptr || esp_ota_set_boot_partition(next) != ESP_OK) {
+    lastOtaResult = "boot partition select failed";
+    lastRemoteEvent = "ota-boot-select-fail";
+    prefs.begin("growbox", false);
+    prefs.putString("lastOta", "");
+    prefs.end();
+    sendTelegramMessage("❌ OTA: прошивка записана, но не удалось выбрать новый OTA-раздел");
+    publishRemoteStatus("ota-boot-select-fail");
+    return;
+  }
+
+  prefs.begin("growbox", false);
+  prefs.putString("lastOta", url);
+  prefs.putString("otaLastAttempt", url);
+  prefs.end();
+
+  String diag = String("OTA boot -> ") + next->label +
+                " (running=" + (running ? running->label : "?") +
+                ", previousBoot=" + (boot ? boot->label : "?") +
+                ", bytes=" + String(totalWritten) + ")";
+  lastOtaResult = diag;
+  lastRemoteEvent = "ota-ready-reboot";
+  publishRemoteStatus("ota-ready-reboot");
+  sendTelegramMessage("✅ <b>OTA записана.</b> " + diag + "\n🔁 Перезагрузка...");
+  delay(350);
+  ESP.restart();
 }
 
 void checkVersionFile(bool flashIfNewer, bool notify) {
