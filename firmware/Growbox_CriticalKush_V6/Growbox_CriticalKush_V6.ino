@@ -765,7 +765,7 @@ String tgCameraKeyboard() {
   return "{\"keyboard\":[[\"📷 Получить фото\",\"⬅️ Главное меню\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
 }
 String tgDeviceKeyboard(const String& icon, const String& name) {
-  return "{\"keyboard\":[[\"" + icon + " ON\",\"" + icon + " OFF\",\"" + icon + " AUTO\"],[\"⬅️ Реле\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
+  return "{\"keyboard\":[[\"" + icon + " ON\",\"" + icon + " OFF\",\"" + icon + " AUTO\"],[\"⬅️ Настройки\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
 }
 
 void triggerWatering(int zone) {
@@ -968,7 +968,7 @@ void handleTelegramCommand(String cmd) {
     setDeviceMode(dev, mode);
     sendTelegramMenu("🎛️ <b>" + title + ":</b> " + modeLabel(mode), tgRelayKeyboard()); return;
   }
-  if (cmd == "⬅️ реле") { sendTelegramMenu("⚡ <b>Управление реле</b>", tgRelayKeyboard()); return; }
+  if (cmd == "⬅️ реле") { sendTelegramMenu("⚙️ <b>Настройки GrowBox</b>", tgSettingsKeyboard()); return; }
   if (cmd == "🔁 перезагрузка") { sendTelegramMenu("⚠️ <b>Перезагрузка контроллера...</b>", tgMainKeyboard()); delay(300); ESP.restart(); return; }
 
   if (cmd.startsWith("/ota http")) {
