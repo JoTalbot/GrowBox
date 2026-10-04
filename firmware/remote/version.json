@@ -1,5 +1,5 @@
 {
-  "version": "6.5.4",
-  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.4/GrowBox-v6.5.4.bin",
-  "notes": "Professional mobile-first web panel, DHT22 heater fail-safe, sensor auto-discovery and persistent GPIO map"
+  "version": "6.5.5",
+  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.5/GrowBox-v6.5.5.bin",
+  "notes": "Quiet version notifications, richer Telegram bot diagnostics and mobile-first web panel"
 }
