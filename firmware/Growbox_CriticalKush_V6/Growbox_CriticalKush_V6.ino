@@ -48,9 +48,9 @@
 
 #define WDT_TIMEOUT_SEC   45
 #ifdef GROWBOX_FORCE_DRY
-#define FIRMWARE_VERSION  "6.5.4-dry"
+#define FIRMWARE_VERSION  "6.5.5-dry"
 #else
-#define FIRMWARE_VERSION  "6.5.4"
+#define FIRMWARE_VERSION  "6.5.5"
 #endif
 
 enum GrowStage {
@@ -221,7 +221,7 @@ void publishRemoteStatus(const String& event);
 void requestOta(const String& url);
 void performPendingOta();
 void executeRemoteCommand(const String& cmd, const String& arg, const String& key);
-void checkVersionFile(bool flashIfNewer);
+void checkVersionFile(bool flashIfNewer, bool notify = false);
 String deviceId();
 String statusJson(const String& event);
 void handleSaveRemote();
@@ -704,19 +704,69 @@ void handleTelegramCommand(String cmd) {
     String helpMsg = "🌿 <b>Команды GrowBox Enterprise v";
     helpMsg += FIRMWARE_VERSION;
     helpMsg += ":</b>\n\n";
-    helpMsg += "/status /photo /settings\n";
-    helpMsg += "/water1 /water2 /water3\n";
+    helpMsg += "/status — полный статус\n";
+    helpMsg += "/climate — климат и VPD\n";
+    helpMsg += "/soil — влажность 3 горшков\n";
+    helpMsg += "/relays — реле и режимы\n";
+    helpMsg += "/settings — настройки\n";
+    helpMsg += "/discover — датчики и GPIO\n";
+    helpMsg += "/water1 /water2 /water3 — полив\n";
     helpMsg += "/veg /bloom /dry /resetday\n";
     helpMsg += "/light on|off|auto\n";
     helpMsg += "/exhaust /heat /fan /humid on|off|auto\n";
-    helpMsg += "/auto — все реле обратно в авто\n";
-    helpMsg += "/remoteon /remoteoff /pull /otacheck\n";
-    helpMsg += "/ota &lt;url&gt; /ntfy &lt;topic&gt; /remotekey &lt;key&gt;\n";
-    helpMsg += "/reboot";
+    helpMsg += "/auto — все реле в AUTO\n";
+    helpMsg += "/version — версия без проверки обновлений\n";
+    helpMsg += "/otacheck — проверить обновление вручную\n";
+    helpMsg += "/remoteon /remoteoff /pull\n";
+    helpMsg += "/ota &lt;url&gt; /reboot";
     sendTelegramMessage(helpMsg);
   }
   else if (cmd == "/photo") {
     sendTelegramMessage("📸 <b>ESP32-CAM Камера:</b>\n" + camIp + "/capture");
+  }
+  else if (cmd == "/version") {
+    sendTelegramMessage("🌿 <b>GrowBox</b>\nПрошивка: <b>v" + String(FIRMWARE_VERSION) + "</b>\nАвтоуведомления о версии: <b>выключены</b>\nПроверка обновлений: только по /otacheck или OTA-команде");
+  }
+  else if (cmd == "/climate") {
+    String s = "🌡️ <b>Климат</b>\n";
+    if (dhtConnected && isfinite(temperature) && isfinite(humidity)) {
+      float vmin, vmax; getVpdTargets(vmin, vmax);
+      s += "Температура: <b>" + String(temperature,1) + " °C</b>\n";
+      s += "Влажность: <b>" + String(humidity,1) + " %</b>\n";
+      s += "VPD: <b>" + String(vpd,2) + " kPa</b>\n";
+      s += "Целевой VPD: " + String(vmin,2) + "–" + String(vmax,2) + " kPa\n";
+      s += "Обогрев: " + String(heaterSafetyOk() ? (stateHeater ? "🔥 ВКЛ" : "Выключен") : "🛑 БЕЗОПАСНО OFF");
+    } else {
+      s += "🛑 <b>DHT22 недоступен.</b>\nОбогрев принудительно выключен.";
+    }
+    sendTelegramMessage(s);
+  }
+  else if (cmd == "/soil") {
+    String s = "🪴 <b>Почва</b>\n";
+    for (int i=0;i<3;i++) {
+      s += "#" + String(i+1) + ": " + (soilConnected[i] ? String(soilMoisture[i]) + " %" : "⚠️ нет датчика");
+      s += "  GPIO " + String(soilPins[i]) + "\n";
+    }
+    if (enableSafetySensors) s += "Бак: " + String(isWaterLow ? "🚨 пуст" : "✅ OK") + " | Протечка: " + String(isFloodDetected ? "🚨 ДА" : "✅ нет");
+    sendTelegramMessage(s);
+  }
+  else if (cmd == "/relays") {
+    String s = "⚡ <b>Реле</b>\n";
+    s += "💡 Свет: " + String(stateLight ? "ON" : "OFF") + " [" + modeShort(modeLight) + "]\n";
+    s += "🌀 Вытяжка: " + String(stateExhaust ? "ON" : "OFF") + " [" + modeShort(modeExhaust) + "]\n";
+    s += "🔥 Обогрев: " + String(stateHeater ? "ON" : "OFF") + " [" + modeShort(modeHeater) + "]\n";
+    s += "💨 Обдув: " + String(stateFan ? "ON" : "OFF") + " [" + modeShort(modeFan) + "]\n";
+    s += "💧 Увлажнитель: " + String(stateHumid ? "ON" : "OFF") + " [" + modeShort(modeHumid) + "]\n";
+    s += "🚿 Помпа: " + String(statePump ? "ON" : "OFF");
+    sendTelegramMessage(s);
+  }
+  else if (cmd == "/discover") {
+    String s = "🔌 <b>Датчики</b>\n";
+    s += "DHT22: " + String(dhtConnected ? "✅ GPIO " + String(dhtPin) : "❌ не найден") + "\n";
+    s += "DS18B20: " + String(ds18Connected ? "✅ GPIO " + String(DS18_PIN) : "❌ нет") + "\n";
+    for(int i=0;i<3;i++) s += "Почва #" + String(i+1) + ": " + String(soilConnected[i] ? "✅ GPIO " + String(soilPins[i]) : "❌ нет") + "\n";
+    s += "Автоопределение: " + String(sensorAutoDiscovery ? "ON" : "OFF");
+    sendTelegramMessage(s);
   }
   else if (cmd == "/status") {
     struct tm timeinfo;
