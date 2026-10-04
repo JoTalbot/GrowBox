@@ -200,11 +200,11 @@ void performPendingOta() {
   http.setTimeout(15000);
   http.setUserAgent("GrowBox/" FIRMWARE_VERSION);
 
-  Client* client = url.startsWith("https://")
-      ? static_cast<Client*>(&secureClient)
-      : static_cast<Client*>(&plainClient);
+  bool beginOk = url.startsWith("https://")
+      ? http.begin(secureClient, url)
+      : http.begin(plainClient, url);
 
-  if (!http.begin(*client, url)) {
+  if (!beginOk) {
     lastOtaResult = "http begin failed";
     lastRemoteEvent = "ota-fail";
     sendTelegramMessage("❌ OTA: не удалось открыть URL");
@@ -284,7 +284,7 @@ void performPendingOta() {
   http.end();
 
   if (!writeOk) {
-    lastOtaResult = Update.getErrorString();
+    lastOtaResult = Update.errorString();
     if (lastOtaResult.length() == 0) {
       lastOtaResult = "OTA write failed: " + String(totalWritten) + "/" + String(expectedSize);
     }
