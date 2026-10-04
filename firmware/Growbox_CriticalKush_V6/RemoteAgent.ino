@@ -213,7 +213,7 @@ void performPendingOta() {
   }
 }
 
-void checkVersionFile(bool flashIfNewer) {
+void checkVersionFile(bool flashIfNewer, bool notify) {
   if (versionUrl.length() < 12) {
     lastRemoteEvent = "no-version-url";
     return;
@@ -221,20 +221,20 @@ void checkVersionFile(bool flashIfNewer) {
   String body = httpsGet(versionUrl);
   if (body.length() < 5) {
     lastRemoteEvent = "version-fetch-fail";
-    sendTelegramMessage("📦 Не удалось скачать version.json");
+    if (notify) sendTelegramMessage("📦 Не удалось скачать version.json");
     return;
   }
   String ver = jsonGet(body, "version");
   String url = jsonGet(body, "url");
   lastRemoteEvent = "version=" + ver;
   if (ver.length() == 0) {
-    sendTelegramMessage("📦 version.json без поля version");
+    if (notify) sendTelegramMessage("📦 version.json без поля version");
     return;
   }
   bool newer = versionCode(ver) > versionCode(FIRMWARE_VERSION);
   String msg = "📦 Сейчас v" + String(FIRMWARE_VERSION) + ", в канале v" + ver;
   msg += newer ? " (новее)" : " (не новее)";
-  sendTelegramMessage(msg);
+  if (notify) sendTelegramMessage(msg);
   publishRemoteStatus(newer ? "update-available" : "up-to-date");
   if (newer && url.length() > 8 && (flashIfNewer || autoOta)) {
     requestOta(url);
@@ -274,9 +274,9 @@ void executeRemoteCommand(const String& cmd, const String& arg, const String& ke
       publishRemoteStatus("mode");
     }
   } else if (cmd == "checkota") {
-    checkVersionFile(false);
+    checkVersionFile(false, true);
   } else if (cmd == "flash") {
-    checkVersionFile(true);
+    checkVersionFile(true, true);
   } else {
     lastRemoteEvent = "unknown-cmd";
   }
