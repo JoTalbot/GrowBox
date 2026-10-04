@@ -607,7 +607,7 @@ int getGrowDay() {
 }
 
 String urlEncode(const String& value) {
-  // URL-encode UTF-8 byte-by-byte. Cast to uint8_t because char may be signed.
+  // URL-encode UTF-8 byte-by-byte. Cast to uint8_t because char may be signed.\n// v6.5.14 Telegram transport hardened.
   String encoded;
   encoded.reserve(value.length() * 3 / 2);
   const char* hex = "0123456789ABCDEF";
