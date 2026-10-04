@@ -1,5 +1,5 @@
 {
-  "version": "6.5.6",
-  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.6/GrowBox-v6.5.6.bin",
-  "notes": "Button-first Telegram control UI with emoji menus, relay submenus, watering and stage controls"
+  "version": "6.5.7",
+  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.7/GrowBox-v6.5.7.bin",
+  "notes": "Expanded ESP32 OTA partitions for 4MB flash; preserves full Telegram button UI"
 }
