@@ -1,5 +1,5 @@
 {
-  "version": "6.5.21",
-  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.21/GrowBox-v6.5.21.bin",
-  "notes": "OTA streaming fix: direct GitHub asset validation and streaming flash [release]"
+  "version": "6.5.22",
+  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.22/GrowBox-v6.5.22.bin",
+  "notes": "Telegram: watering buttons moved to inline controls shown with Status"
 }
