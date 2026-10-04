@@ -908,16 +908,24 @@ void handleTelegramCommand(String cmd) {
   else if (original.indexOf("Главное меню") >= 0) cmd = "⬅️ главное меню";
   else if (original.indexOf("⬅") >= 0 && original.length() < 40) cmd = "⬅️ главное меню";
 
+  if (original.indexOf("Свет ВКЛ") >= 0) cmd = "💡 свет on";
+  else if (original.indexOf("Свет ВЫКЛ") >= 0) cmd = "💡 свет off";
+  else if (original.indexOf("Свет AUTO") >= 0) cmd = "💡 свет auto";
+  else if (original.indexOf("Вент ВКЛ") >= 0) cmd = "🌀 вент on";
+  else if (original.indexOf("Вент ВЫКЛ") >= 0) cmd = "🌀 вент off";
+  else if (original.indexOf("Вент AUTO") >= 0) cmd = "🌀 вент auto";
+  else if (original.indexOf("Тепл ВКЛ") >= 0) cmd = "🔥 тепл on";
+  else if (original.indexOf("Тепл ВЫКЛ") >= 0) cmd = "🔥 тепл off";
+  else if (original.indexOf("Тепл AUTO") >= 0) cmd = "🔥 тепл auto";
   // Telegram UI: all core controls are available through buttons.
   if (cmd == "⬅️ главное меню" || cmd == "🏠 главное меню") { sendTelegramMenu("🌿 <b>GrowBox</b>\nВыберите раздел управления 👇", tgMainKeyboard()); return; }
   if (cmd == "📊 статус") { handleTelegramCommand("/status"); return; }
-  if (cmd == "🌡️ климат") { handleTelegramCommand("/climate"); return; }
-  if (cmd == "🪴 почва") { handleTelegramCommand("/soil"); return; }
-  if (cmd == "⚡ реле") { sendTelegramMenu("⚡ <b>Управление реле</b>\nВыберите устройство:", tgRelayKeyboard()); return; }
-  if (cmd == "🚿 полив") { sendTelegramMenu("🚿 <b>Ручной полив</b>\nВыберите горшок:", tgWaterKeyboard()); return; }
-  if (cmd == "🌱 режим") { sendTelegramMenu("🌱 <b>Стадия выращивания</b>\nВыберите режим:", tgStageKeyboard()); return; }
-  if (cmd == "🔌 датчики") { sendTelegramMenu("🔌 <b>Датчики</b>\nПроверка и автоопределение:", tgSensorKeyboard()); return; }
   if (cmd == "⚙️ настройки" || cmd == "⚙️ показать настройки") { sendTelegramMenu("⚙️ <b>Настройки GrowBox</b>", tgSettingsKeyboard()); handleTelegramCommand("/settings"); return; }
+  if (cmd == "🔌 датчики") { sendTelegramMenu("🔌 <b>Датчики</b>\nПроверка и автоопределение:", tgSensorKeyboard()); return; }
+  if (cmd == "⚡ реле") { sendTelegramMenu("⚡ <b>Управление исполнительными устройствами</b>", tgRelayKeyboard()); return; }
+  if (cmd == "🌱 режим") { sendTelegramMenu("🌱 <b>Стадия выращивания</b>\nВыберите режим:", tgStageKeyboard()); return; }
+  if (cmd == "⬅️ настройки") { sendTelegramMenu("⚙️ <b>Настройки GrowBox</b>", tgSettingsKeyboard()); return; }
+  if (cmd == "⬅️ статус") { handleTelegramCommand("/status"); return; }
   if (cmd == "📦 обновления") { sendTelegramMenu("📦 <b>Обновления</b>\nВерсия и ручная проверка OTA:", tgUpdateKeyboard()); return; }
   if (cmd == "🛰️ сервис") { sendTelegramMenu("🛰️ <b>Удалённый сервис</b>\nУправление каналом и контроллером:", tgServiceKeyboard()); return; }
   if (cmd == "📷 камера") { sendTelegramMenu("📷 <b>ESP32-CAM</b>", tgCameraKeyboard()); return; }
@@ -937,25 +945,19 @@ void handleTelegramCommand(String cmd) {
   if (cmd == "🛰️ remote off") { remoteEnabled = false; persistRemote(); sendTelegramMenu("🛰️ Remote <b>выключен</b>.", tgServiceKeyboard()); return; }
   if (cmd == "📥 pull") { lastRemotePoll = 0; sendTelegramMenu("📥 Канал поставлен на немедленный опрос.", tgServiceKeyboard()); return; }
   if (cmd == "📷 получить фото") { sendTelegramMenu("📷 <b>ESP32-CAM</b>\n" + camIp + "/capture", tgCameraKeyboard()); return; }
-  if (cmd == "💡 свет" || cmd == "🌀 вытяжка" || cmd == "🔥 обогрев" || cmd == "💨 обдув" || cmd == "💧 увлажнитель") {
+  if (cmd == "💡 свет" || cmd == "🌀 вент" || cmd == "🔥 тепл" || cmd == "💨 обдув") {
     String icon = "💡";
-    if (cmd == "🌀 вытяжка") icon = "🌀";
-    else if (cmd == "🔥 обогрев") icon = "🔥";
-    else if (cmd == "💨 обдув") icon = "💨";
-    else if (cmd == "💧 увлажнитель") icon = "💧";
-    String name = cmd;
-    if (cmd == "💡 свет") name = "Свет";
-    else if (cmd == "🌀 вытяжка") name = "Вытяжка";
-    else if (cmd == "🔥 обогрев") name = "Обогрев";
-    else if (cmd == "💨 обдув") name = "Обдув";
-    else if (cmd == "💧 увлажнитель") name = "Увлажнитель";
+    String name = "Свет";
+    if (cmd == "🌀 вент") { icon = "🌀"; name = "Вент"; }
+    else if (cmd == "🔥 тепл") { icon = "🔥"; name = "Тепл"; }
+    else if (cmd == "💨 обдув") { icon = "💨"; name = "Обдув"; }
     sendTelegramMenu("🎛️ <b>" + name + "</b>\nВыберите режим:", tgDeviceKeyboard(icon, name)); return;
   }
-  if (cmd.startsWith("💡 свет ") || cmd.startsWith("🌀 вытяжка ") || cmd.startsWith("🔥 обогрев ") || cmd.startsWith("💨 обдув ") || cmd.startsWith("💧 увлажнитель ")) {
+  if (cmd.startsWith("💡 свет ") || cmd.startsWith("🌀 вент ") || cmd.startsWith("🔥 тепл ") || cmd.startsWith("💨 обдув ")) {
     String dev = ""; String title = "";
     if (cmd.startsWith("💡 свет ")) { dev="light"; title="Свет"; }
-    else if (cmd.startsWith("🌀 вытяжка ")) { dev="exhaust"; title="Вытяжка"; }
-    else if (cmd.startsWith("🔥 обогрев ")) { dev="heater"; title="Обогрев"; }
+    else if (cmd.startsWith("🌀 вент ")) { dev="exhaust"; title="Вент"; }
+    else if (cmd.startsWith("🔥 тепл ")) { dev="heater"; title="Тепл"; }
     else if (cmd.startsWith("💨 обдув ")) { dev="fan"; title="Обдув"; }
     else if (cmd.startsWith("💧 увлажнитель ")) { dev="humid"; title="Увлажнитель"; }
     String arg = cmd.substring(cmd.lastIndexOf(' ') + 1);
@@ -1092,7 +1094,7 @@ void handleTelegramCommand(String cmd) {
     s += " Обогрев=" + String(stateHeater ? "ВКЛ" : "ВЫКЛ") + " [" + modeShort(modeHeater) + "]\n";
     s += " Обдув=" + String(stateFan ? "ВКЛ" : "ВЫКЛ") + " [" + modeShort(modeFan) + "]\n";
     s += " Увлажн=" + String(stateHumid ? "ВКЛ" : "ВЫКЛ") + " [" + modeShort(modeHumid) + "]";
-    sendTelegramMessage(s);
+    sendTelegramMenu(s, tgStatusKeyboard());
   }
   else if (cmd == "/settings") {
     String s = "⚙️ <b>Настройки v" + String(FIRMWARE_VERSION) + "</b>\n";
@@ -1103,7 +1105,8 @@ void handleTelegramCommand(String cmd) {
     s += "RH сушка: " + String(rhTargetDry, 0) + " % (±" + String(rhHystDry, 0) + ")\n";
     s += "Полив: порог " + String(soilDryThreshold) + "%, " + String(wateringDurationMs / 1000) + " сек, soak " + String(soilSoakDelayMs / 60000) + " мин\n";
     s += "VPD вега " + String(vpdVegMin, 2) + "–" + String(vpdVegMax, 2) + ", цвет " + String(vpdBloomMin, 2) + "–" + String(vpdBloomMax, 2) + "\n";
-    s += "Увлажнитель: " + String(enableHumidifier ? "включён (GPIO21)" : "выключен");
+    s += "Свет (новый): GPIO21, старое реле света GPIO16 — всегда ВКЛ";
+    s += "\nДатчики: доступны в меню настроек.";
     sendTelegramMessage(s);
   }
   else if (cmd == "/water1" || cmd == "/water 1") triggerWatering(0);
