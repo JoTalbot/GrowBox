@@ -1,5 +1,5 @@
 {
-  "version": "6.5.12",
-  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.12/GrowBox-v6.5.12.bin",
-  "notes": "Compact OTA build for stock ESP32 OTA slot; MQTT/HA optional layer excluded to keep firmware below stock OTA size; explicit boot-slot selection retained"
+  "version": "6.5.13",
+  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.13/GrowBox-v6.5.13.bin",
+  "notes": "Adds runtime OTA running/boot/next partition diagnostics to /api/data; compact stock-slot OTA build"
 }
