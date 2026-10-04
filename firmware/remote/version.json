@@ -1,5 +1,5 @@
 {
-  "version": "6.5.10",
-  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.10/GrowBox-v6.5.10.bin",
-  "notes": "OTA explicitly selects and verifies the new boot partition before reboot; one-time migration enables reliable automatic OTA; Telegram UTF-8 fix retained"
+  "version": "6.5.11",
+  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.11/GrowBox-v6.5.11.bin",
+  "notes": "Wi-Fi OTA compatible with stock ESP32 partition layout; explicit boot-slot selection and auto-OTA migration"
 }
