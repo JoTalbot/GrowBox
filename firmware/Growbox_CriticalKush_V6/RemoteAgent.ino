@@ -29,6 +29,14 @@ void loadRemoteSettings() {
   inboxUrl = prefs.getString("inboxUrl", inboxUrl);
   remoteEnabled = prefs.getBool("remEn", remoteEnabled);
   autoOta = prefs.getBool("autoOta", autoOta);
+  // One-time migration: older builds could persist autoOta=false. Enable the
+  // new reliable OTA policy once, while keeping the setting user-changeable later.
+  int otaPolicyVersion = prefs.getInt("otaPolicyV", 0);
+  if (otaPolicyVersion < 2) {
+    autoOta = true;
+    prefs.putBool("autoOta", true);
+    prefs.putInt("otaPolicyV", 2);
+  }
   lastInboxId = prefs.getLong("inboxId", lastInboxId);
   String ns = prefs.getString("ntfySince", "");
   if (ns.length() > 2) lastNtfySince = ns;
@@ -180,7 +188,10 @@ void performPendingOta() {
 
   feedWatchdog();
   httpUpdate.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-  httpUpdate.rebootOnUpdate(true);
+  // Do not let HTTPUpdate reboot before we verify and explicitly select the
+  // newly written OTA partition. This prevents a successful download followed
+  // by a reboot into the previous firmware slot.
+  httpUpdate.rebootOnUpdate(false);
   httpUpdate.onProgress([](int cur, int total) {
     feedWatchdog();
   });
@@ -197,7 +208,29 @@ void performPendingOta() {
     ret = httpUpdate.update(client, url);
   }
   if (ret == HTTP_UPDATE_OK) {
-    lastOtaResult = "ok";
+    const esp_partition_t* running = esp_ota_get_running_partition();
+    const esp_partition_t* next = esp_ota_get_next_update_partition(running);
+    const esp_partition_t* boot = esp_ota_get_boot_partition();
+    if (next == nullptr || esp_ota_set_boot_partition(next) != ESP_OK) {
+      lastOtaResult = "boot partition select failed";
+      lastRemoteEvent = "ota-boot-select-fail";
+      prefs.begin("growbox", false);
+      prefs.putString("lastOta", "");
+      prefs.end();
+      sendTelegramMessage("❌ OTA: прошивка записана, но не удалось выбрать новый OTA-раздел");
+      publishRemoteStatus("ota-boot-select-fail");
+      return;
+    }
+    String diag = String("OTA boot -> ") + next->label +
+                  " (running=" + (running ? running->label : "?") +
+                  ", previousBoot=" + (boot ? boot->label : "?") + ")";
+    lastOtaResult = diag;
+    lastRemoteEvent = "ota-ready-reboot";
+    publishRemoteStatus("ota-ready-reboot");
+    sendTelegramMessage("✅ <b>OTA записана.</b> " + diag + "\n🔁 Перезагрузка...");
+    delay(350);
+    ESP.restart();
+
   } else if (ret == HTTP_UPDATE_NO_UPDATES) {
     lastOtaResult = "no-update";
     lastRemoteEvent = "ota-none";
