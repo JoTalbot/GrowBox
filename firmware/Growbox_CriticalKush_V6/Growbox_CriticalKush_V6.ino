@@ -845,6 +845,17 @@ void handleTelegramCommand(String cmd) {
   else if (cmd == "📥 Pull") cmd = "📥 pull";
   else if (cmd == "🔁 Перезагрузка") cmd = "🔁 перезагрузка";
   else if (cmd == "📷 Получить фото") cmd = "📷 получить фото";
+  else if (cmd == "🌀 Вент") cmd = "🌀 вент";
+  else if (cmd == "🔥 Тепл") cmd = "🔥 тепл";
+  else if (cmd == "💡 Свет ВКЛ") cmd = "💡 свет on";
+  else if (cmd == "💡 Свет ВЫКЛ") cmd = "💡 свет off";
+  else if (cmd == "💡 Свет AUTO") cmd = "💡 свет auto";
+  else if (cmd == "🌀 Вент ВКЛ") cmd = "🌀 вент on";
+  else if (cmd == "🌀 Вент ВЫКЛ") cmd = "🌀 вент off";
+  else if (cmd == "🌀 Вент AUTO") cmd = "🌀 вент auto";
+  else if (cmd == "🔥 Тепл ВКЛ") cmd = "🔥 тепл on";
+  else if (cmd == "🔥 Тепл ВЫКЛ") cmd = "🔥 тепл off";
+  else if (cmd == "🔥 Тепл AUTO") cmd = "🔥 тепл auto";
   else if (cmd == "⬅️ Реле") cmd = "⬅️ реле";
   else if (cmd == "💡 Свет") cmd = "💡 свет";
   else if (cmd == "🌀 Вытяжка") cmd = "🌀 вытяжка";
@@ -908,15 +919,6 @@ void handleTelegramCommand(String cmd) {
   else if (original.indexOf("Главное меню") >= 0) cmd = "⬅️ главное меню";
   else if (original.indexOf("⬅") >= 0 && original.length() < 40) cmd = "⬅️ главное меню";
 
-  if (original.indexOf("Свет ВКЛ") >= 0) cmd = "💡 свет on";
-  else if (original.indexOf("Свет ВЫКЛ") >= 0) cmd = "💡 свет off";
-  else if (original.indexOf("Свет AUTO") >= 0) cmd = "💡 свет auto";
-  else if (original.indexOf("Вент ВКЛ") >= 0) cmd = "🌀 вент on";
-  else if (original.indexOf("Вент ВЫКЛ") >= 0) cmd = "🌀 вент off";
-  else if (original.indexOf("Вент AUTO") >= 0) cmd = "🌀 вент auto";
-  else if (original.indexOf("Тепл ВКЛ") >= 0) cmd = "🔥 тепл on";
-  else if (original.indexOf("Тепл ВЫКЛ") >= 0) cmd = "🔥 тепл off";
-  else if (original.indexOf("Тепл AUTO") >= 0) cmd = "🔥 тепл auto";
   // Telegram UI: all core controls are available through buttons.
   if (cmd == "⬅️ главное меню" || cmd == "🏠 главное меню") { sendTelegramMenu("🌿 <b>GrowBox</b>\nВыберите раздел управления 👇", tgMainKeyboard()); return; }
   if (cmd == "📊 статус") { handleTelegramCommand("/status"); return; }
