@@ -1,5 +1,5 @@
 {
   "version": "6.5.25",
   "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.25/GrowBox-v6.5.25.bin",
-  "notes": "Telegram live status: edit-in-place every 10s, callback deduplication, no menu message spam"
+  "notes": "Telegram live status: edit-in-place every 10s, callback deduplication, no menu message spam, automatic OTA check every 5 minutes"
 }
