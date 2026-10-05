@@ -1,5 +1,5 @@
 {
-  "version": "6.5.23",
-  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.23/GrowBox-v6.5.23.bin",
-  "notes": "Telegram UX: mobile-first inline control panels for devices, watering, stages and sensors"
+  "version": "6.5.24",
+  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.24/GrowBox-v6.5.24.bin",
+  "notes": "Telegram UX: unified compact status dashboard, inline controls and consistent mobile navigation"
 }
