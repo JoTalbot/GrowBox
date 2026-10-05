@@ -841,13 +841,7 @@ String tgWaterInlineKeyboard() {
   return "{\"inline_keyboard\":[[{\"text\":\"🚿 Горшок 1\",\"callback_data\":\"water:0\"},{\"text\":\"🚿 Горшок 2\",\"callback_data\":\"water:1\"},{\"text\":\"🚿 Горшок 3\",\"callback_data\":\"water:2\"}],[{\"text\":\"📊 Статус\",\"callback_data\":\"status:refresh\"},{\"text\":\"🏠 Главное меню\",\"callback_data\":\"menu:home\"}]]}";
 }
 
-String tgStageInlineKeyboard() {
-  return "{\"inline_keyboard\":[[{\"text\":\"🌱 Вегетация\",\"callback_data\":\"stage:veg\"},{\"text\":\"🌸 Цветение\",\"callback_data\":\"stage:bloom\"}],[{\"text\":\"🍂 Сушка 60/60\",\"callback_data\":\"stage:dry\"},{\"text\":\"📅 Новый цикл\",\"callback_data\":\"stage:reset\"}],[{\"text\":\"📊 Статус\",\"callback_data\":\"status:refresh\"},{\"text\":\"🏠 Главное меню\",\"callback_data\":\"menu:home\"}]]}";
-}
 
-String tgSensorInlineKeyboard() {
-  return "{\"inline_keyboard\":[[{\"text\":\"🔌 Обнаружить\",\"callback_data\":\"sensor:discover\"},{\"text\":\"📋 Статус\",\"callback_data\":\"sensor:status\"}],[{\"text\":\"🏠 Главное меню\",\"callback_data\":\"menu:home\"}]]}";
-}
 
 void triggerWatering(int zone) {
   if (zone < 0 || zone >= 3) return;
@@ -1013,10 +1007,10 @@ void handleTelegramCommand(String cmd) {
   if (cmd == "⬅️ главное меню" || cmd == "🏠 главное меню") { sendTelegramMenu("🌿 <b>GrowBox</b>\nВыберите раздел 👇\n\n📊 Статус — всё главное\n🎛️ Управление — реле\n🚿 Полив — горшки\n🌱 Режим — стадия", tgMainKeyboard()); return; }
   if (cmd == "🎛️ управление") { sendTelegramInline("🎛️ <b>Управление устройствами</b>\nВыберите действие:", tgControlInlineKeyboard()); return; }
   if (cmd == "🚿 полив") { String s = "🚿 <b>Полив</b>\n"; for (int i=0;i<3;i++) s += "Горшок #" + String(i+1) + ": " + String(soilConnected[i] ? String(soilMoisture[i]) + "%" : "датчик OFF") + "\n"; s += "Длительность: " + String(wateringDurationMs/1000) + " сек"; if (activeWateringZone >= 0) s += "\n⏳ Сейчас поливается горшок #" + String(activeWateringZone+1); if (enableSafetySensors && isWaterLow) s += "\n⚠️ Низкий уровень воды"; if (enableSafetySensors && isFloodDetected) s += "\n🚨 Протечка"; sendTelegramInline(s, tgWaterInlineKeyboard()); return; }
-  if (cmd == "🌱 режим") { sendTelegramInline("🌱 <b>Режим</b>\nТекущий: " + String(currentStage == STAGE_VEG ? "Вегетация" : (currentStage == STAGE_BLOOM ? "Цветение" : "Сушка 60/60")) + "\nДень: " + String(getGrowDay()), tgStageInlineKeyboard()); return; }
+  if (cmd == "🌱 режим") { sendTelegramMenu("🌱 <b>Стадия выращивания</b>\nВыберите режим:", tgStageKeyboard()); return; }
   if (cmd == "📊 статус") { sendTelegramInline(tgStatusText(), tgStatusInlineKeyboard()); return; }
   if (cmd == "⚙️ настройки" || cmd == "⚙️ показать настройки") { handleTelegramCommand("/settings"); return; }
-  if (cmd == "🔌 датчики") { String s = "🔌 <b>Датчики</b>\nDHT22: " + String(dhtConnected ? "✅" : "❌") + "\nDS18B20: " + String(ds18Connected ? "✅" : "❌") + "\nПочва: " + String(soilConnected[0] ? "✅" : "❌") + " / " + String(soilConnected[1] ? "✅" : "❌") + " / " + String(soilConnected[2] ? "✅" : "❌"); sendTelegramInline(s, tgSensorInlineKeyboard()); return; }
+  if (cmd == "🔌 датчики") { sendTelegramMenu("🔌 <b>Датчики</b>\nПроверка и автоопределение:", tgSensorKeyboard()); return; }
   if (cmd == "⚡ реле") { sendTelegramMenu("⚡ <b>Управление исполнительными устройствами</b>", tgRelayKeyboard()); return; }
   if (cmd == "🌱 режим") { sendTelegramMenu("🌱 <b>Стадия выращивания</b>\nВыберите режим:", tgStageKeyboard()); return; }
   if (cmd == "⬅️ настройки") { sendTelegramMenu("⚙️ <b>Настройки GrowBox</b>", tgSettingsKeyboard()); return; }
@@ -1404,19 +1398,6 @@ void checkTelegramUpdates() {
             else answerTelegramCallback(callbackId, "Неизвестное устройство");
             sendTelegramInline("🎛️ <b>Управление устройствами</b>\nВыберите следующее действие:", tgControlInlineKeyboard());
           }
-        } else if (callbackData.startsWith("stage:")) {
-          String stage = callbackData.substring(6);
-          if (stage == "veg") { setGrowStage(STAGE_VEG); answerTelegramCallback(callbackId, "Вегетация"); }
-          else if (stage == "bloom") { setGrowStage(STAGE_BLOOM); answerTelegramCallback(callbackId, "Цветение"); }
-          else if (stage == "dry") { setGrowStage(STAGE_DRY); answerTelegramCallback(callbackId, "Сушка 60/60"); }
-          else if (stage == "reset") { if (!ntpReady()) answerTelegramCallback(callbackId, "NTP ещё не готов"); else { startNewCycle(); answerTelegramCallback(callbackId, "Новый цикл: день 1"); } }
-          sendTelegramInline("🌱 <b>Режим:</b> " + String(currentStage == STAGE_VEG ? "Вегетация" : (currentStage == STAGE_BLOOM ? "Цветение" : "Сушка 60/60")) + "\nДень: " + String(getGrowDay()), tgStageInlineKeyboard());
-        } else if (callbackData == "sensor:discover") {
-          discoverSensors(true); answerTelegramCallback(callbackId, "Автоопределение завершено");
-          sendTelegramInline("🔌 <b>Датчики обновлены</b>\nDHT22 GPIO " + String(dhtPin) + "\nПочва GPIO " + String(soilPins[0]) + ", " + String(soilPins[1]) + ", " + String(soilPins[2]), tgSensorInlineKeyboard());
-        } else if (callbackData == "sensor:status") {
-          answerTelegramCallback(callbackId, "Статус датчиков");
-          sendTelegramInline("🔌 <b>Датчики</b>\nDHT22: " + String(dhtConnected ? "✅" : "❌") + "\nDS18B20: " + String(ds18Connected ? "✅" : "❌") + "\nПочва: " + String(soilConnected[0] ? "✅" : "❌") + " / " + String(soilConnected[1] ? "✅" : "❌") + " / " + String(soilConnected[2] ? "✅" : "❌"), tgSensorInlineKeyboard());
         } else if (callbackData == "status:refresh") {
           answerTelegramCallback(callbackId, "Обновлено"); sendTelegramInline(tgStatusText(), tgStatusInlineKeyboard());
         } else if (callbackData == "menu:control") {
