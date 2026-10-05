@@ -782,20 +782,15 @@ String tgStatusKeyboard() {
   return "{\"keyboard\":[[\"💡 Свет ВКЛ\",\"💡 Свет ВЫКЛ\",\"💡 Свет AUTO\"],[\"🌀 Вент ВКЛ\",\"🌀 Вент ВЫКЛ\",\"🌀 Вент AUTO\"],[\"🔥 Тепл ВКЛ\",\"🔥 Тепл ВЫКЛ\",\"🔥 Тепл AUTO\"],[\"⬅️ Главное меню\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
 }
 String tgStatusText() {
-  String s = "🌿 <b>GrowBox</b>\n\n";
-  s += "🌡️ <b>" + String(temperature, 1) + "°C</b>   💧 <b>" + String(humidity, 0) + "%</b>\n";
-  s += "💨 VPD <b>" + String(vpd, 2) + "</b>\n\n";
-  s += "🪴 <b>Почва</b>\n";
-  for (int i = 0; i < 3; i++) s += "  #" + String(i + 1) + "  " + String(soilConnected[i] ? String(soilMoisture[i]) + "%" : "❌ OFF") + "\n";
-  s += "\n⚡ <b>Устройства</b>\n";
-  s += String("💡 ") + modeLabel(modeLight) + "   🌀 " + modeLabel(modeExhaust) + "\n";
-  s += String("🔥 ") + modeLabel(modeHeater) + "   💨 " + modeLabel(modeFan) + "\n";
-  s += String("💧 ") + modeLabel(modeHumid) + "\n\n";
-  s += activeWateringZone >= 0 ? "🚿 <b>Полив:</b> горшок #" + String(activeWateringZone + 1) + " ⏳\n" : "🚿 <b>Полив:</b> нет\n";
-  s += "🌱 <b>" + String(currentStage == STAGE_VEG ? "Вегетация" : (currentStage == STAGE_BLOOM ? "Цветение" : "Сушка 60/60")) + "</b> • день " + String(getGrowDay());
-  if (enableSafetySensors && isWaterLow) s += "\n\n⚠️ <b>Низкий уровень воды</b>";
-  if (enableSafetySensors && isFloodDetected) s += "\n\n🚨 <b>ПРОТЕЧКА: полив заблокирован</b>";
-  if (!dhtConnected) s += "\n\n⚠️ <b>DHT22 недоступен</b>";
+  String s = "🌿 <b>GrowBox</b>\n";
+  s += "🌡️ " + String(temperature,1) + "°C  💧 " + String(humidity,0) + "%  💨 VPD " + String(vpd,2) + "\n";
+  s += "🪴 " + String(soilConnected[0] ? String(soilMoisture[0])+"%" : "❌") + " / " + String(soilConnected[1] ? String(soilMoisture[1])+"%" : "❌") + " / " + String(soilConnected[2] ? String(soilMoisture[2])+"%" : "❌") + "\n";
+  s += "⚡ " + modeLabel(modeLight) + " / " + modeLabel(modeExhaust) + " / " + modeLabel(modeHeater) + " / " + modeLabel(modeFan) + " / " + modeLabel(modeHumid) + "\n";
+  s += activeWateringZone >= 0 ? "🚿 Горшок #" + String(activeWateringZone+1) + " ⏳" : "🚿 Полив: нет";
+  s += "\n🌱 " + String(currentStage == STAGE_VEG ? "Вегетация" : (currentStage == STAGE_BLOOM ? "Цветение" : "Сушка")) + " • день " + String(getGrowDay());
+  if (enableSafetySensors && isWaterLow) s += "\n⚠️ Вода";
+  if (enableSafetySensors && isFloodDetected) s += "\n🚨 ПРОТЕЧКА";
+  if (!dhtConnected) s += "\n⚠️ DHT22";
   return s;
 }
 
