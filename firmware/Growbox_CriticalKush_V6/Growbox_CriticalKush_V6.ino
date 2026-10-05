@@ -49,9 +49,9 @@
 
 #define WDT_TIMEOUT_SEC   45
 #ifdef GROWBOX_FORCE_DRY
-#define FIRMWARE_VERSION  "6.5.22-dry"
+#define FIRMWARE_VERSION  "6.5.23-dry"
 #else
-#define FIRMWARE_VERSION  "6.5.22"
+#define FIRMWARE_VERSION  "6.5.23"
 #endif
 
 enum GrowStage {
@@ -773,7 +773,7 @@ void answerTelegramCallback(const String& callbackId, const String& text = "") {
 }
 
 String tgMainKeyboard() {
-  return "{\"keyboard\":[[\"📊 Статус\",\"⚙️ Настройки\"],[\"📦 Обновления\",\"🛰️ Сервис\"],[\"📷 Камера\",\"🔄 Всё AUTO\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
+  return "{\"keyboard\":[[\"📊 Статус\",\"🎛️ Управление\"],[\"🚿 Полив\",\"🌱 Режим\"],[\"🔌 Датчики\",\"⚙️ Настройки\"],[\"📦 Обновления\",\"🛰️ Сервис\"],[\"📷 Камера\",\"🔄 Всё AUTO\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
 }
 String tgBackKeyboard() {
   return "{\"keyboard\":[[\"⬅️ Главное меню\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
@@ -782,7 +782,7 @@ String tgStatusKeyboard() {
   return "{\"keyboard\":[[\"💡 Свет ВКЛ\",\"💡 Свет ВЫКЛ\",\"💡 Свет AUTO\"],[\"🌀 Вент ВКЛ\",\"🌀 Вент ВЫКЛ\",\"🌀 Вент AUTO\"],[\"🔥 Тепл ВКЛ\",\"🔥 Тепл ВЫКЛ\",\"🔥 Тепл AUTO\"],[\"⬅️ Главное меню\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
 }
 String tgStatusInlineKeyboard() {
-  return "{\"inline_keyboard\":[[{\"text\":\"🚿 Горшок 1\",\"callback_data\":\"water:0\"},{\"text\":\"🚿 Горшок 2\",\"callback_data\":\"water:1\"},{\"text\":\"🚿 Горшок 3\",\"callback_data\":\"water:2\"}]]}";
+  return "{\"inline_keyboard\":[[{\"text\":\"🚿 Горшок 1\",\"callback_data\":\"water:0\"},{\"text\":\"🚿 Горшок 2\",\"callback_data\":\"water:1\"},{\"text\":\"🚿 Горшок 3\",\"callback_data\":\"water:2\"}],[{\"text\":\"🎛️ Управление\",\"callback_data\":\"menu:control\"},{\"text\":\"🔄 Обновить\",\"callback_data\":\"status:refresh\"}],[{\"text\":\"🏠 Главное меню\",\"callback_data\":\"menu:home\"}]]}";
 }
 String tgRelayKeyboard() {
   return "{\"keyboard\":[[\"💡 Свет\",\"🌀 Вент\"],[\"🔥 Тепл\",\"💨 Обдув\"],[\"🔄 Всё AUTO\"],[\"⬅️ Настройки\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
@@ -810,6 +810,30 @@ String tgCameraKeyboard() {
 }
 String tgDeviceKeyboard(const String& icon, const String& name) {
   return "{\"keyboard\":[[\"" + icon + " ON\",\"" + icon + " OFF\",\"" + icon + " AUTO\"],[\"⬅️ Настройки\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
+}
+
+
+String tgControlInlineKeyboard() {
+  return "{\"inline_keyboard\":["
+         "[{\"text\":\"💡 Свет ВКЛ\",\"callback_data\":\"mode:light:on\"},{\"text\":\"AUTO\",\"callback_data\":\"mode:light:auto\"},{\"text\":\"ВЫКЛ\",\"callback_data\":\"mode:light:off\"}],"
+         "[{\"text\":\"🌀 Вытяжка ВКЛ\",\"callback_data\":\"mode:exhaust:on\"},{\"text\":\"AUTO\",\"callback_data\":\"mode:exhaust:auto\"},{\"text\":\"ВЫКЛ\",\"callback_data\":\"mode:exhaust:off\"}],"
+         "[{\"text\":\"🔥 Обогрев ВКЛ\",\"callback_data\":\"mode:heater:on\"},{\"text\":\"AUTO\",\"callback_data\":\"mode:heater:auto\"},{\"text\":\"ВЫКЛ\",\"callback_data\":\"mode:heater:off\"}],"
+         "[{\"text\":\"💨 Обдув ВКЛ\",\"callback_data\":\"mode:fan:on\"},{\"text\":\"AUTO\",\"callback_data\":\"mode:fan:auto\"},{\"text\":\"ВЫКЛ\",\"callback_data\":\"mode:fan:off\"}],"
+         "[{\"text\":\"💧 Увлажнитель ВКЛ\",\"callback_data\":\"mode:humid:on\"},{\"text\":\"AUTO\",\"callback_data\":\"mode:humid:auto\"},{\"text\":\"ВЫКЛ\",\"callback_data\":\"mode:humid:off\"}],"
+         "[{\"text\":\"🔄 Всё AUTO\",\"callback_data\":\"mode:all:auto\"},{\"text\":\"📊 Статус\",\"callback_data\":\"status:refresh\"}],"
+         "[{\"text\":\"🏠 Главное меню\",\"callback_data\":\"menu:home\"}]]}";
+}
+
+String tgWaterInlineKeyboard() {
+  return "{\"inline_keyboard\":[[{\"text\":\"🚿 Горшок 1\",\"callback_data\":\"water:0\"},{\"text\":\"🚿 Горшок 2\",\"callback_data\":\"water:1\"},{\"text\":\"🚿 Горшок 3\",\"callback_data\":\"water:2\"}],[{\"text\":\"📊 Статус\",\"callback_data\":\"status:refresh\"},{\"text\":\"🏠 Главное меню\",\"callback_data\":\"menu:home\"}]]}";
+}
+
+String tgStageInlineKeyboard() {
+  return "{\"inline_keyboard\":[[{\"text\":\"🌱 Вегетация\",\"callback_data\":\"stage:veg\"},{\"text\":\"🌸 Цветение\",\"callback_data\":\"stage:bloom\"}],[{\"text\":\"🍂 Сушка 60/60\",\"callback_data\":\"stage:dry\"},{\"text\":\"📅 Новый цикл\",\"callback_data\":\"stage:reset\"}],[{\"text\":\"📊 Статус\",\"callback_data\":\"status:refresh\"},{\"text\":\"🏠 Главное меню\",\"callback_data\":\"menu:home\"}]]}";
+}
+
+String tgSensorInlineKeyboard() {
+  return "{\"inline_keyboard\":[[{\"text\":\"🔌 Обнаружить\",\"callback_data\":\"sensor:discover\"},{\"text\":\"📋 Статус\",\"callback_data\":\"sensor:status\"}],[{\"text\":\"🏠 Главное меню\",\"callback_data\":\"menu:home\"}]]}";
 }
 
 void triggerWatering(int zone) {
@@ -929,6 +953,7 @@ void handleTelegramCommand(String cmd) {
   // not by the complete UTF-8 button string.
   if (original.indexOf("Статус") >= 0 && original.indexOf("датчиков") < 0 && original.indexOf("Датчиков") < 0) cmd = "📊 статус";
   else if (original.indexOf("Климат") >= 0) cmd = "🌡️ климат";
+  else if (original.indexOf("Управление") >= 0) cmd = "🎛️ управление";
   else if (original.indexOf("Почва") >= 0) cmd = "🪴 почва";
   else if (original.indexOf("Реле") >= 0 && original.indexOf("ON") < 0 && original.indexOf("OFF") < 0 && original.indexOf("AUTO") < 0) cmd = "⚡ реле";
   else if (original.indexOf("Полив") >= 0) cmd = "🚿 полив";
@@ -963,11 +988,22 @@ void handleTelegramCommand(String cmd) {
   else if (original.indexOf("Главное меню") >= 0) cmd = "⬅️ главное меню";
   else if (original.indexOf("⬅") >= 0 && original.length() < 40) cmd = "⬅️ главное меню";
 
+  else if (cmd == "🎛️ Управление") cmd = "🎛️ управление";
+  else if (cmd == "🚿 Полив") cmd = "🚿 полив";
+  else if (cmd == "🌱 Режим") cmd = "🌱 режим";
+  else if (cmd == "🔌 Датчики") cmd = "🔌 датчики";
+  else if (cmd == "⚙️ Настройки") cmd = "⚙️ настройки";
+  else if (cmd == "📦 Обновления") cmd = "📦 обновления";
+  else if (cmd == "🛰️ Сервис") cmd = "🛰️ сервис";
+  else if (cmd == "📷 Камера") cmd = "📷 камера";
   // Telegram UI: all core controls are available through buttons.
   if (cmd == "⬅️ главное меню" || cmd == "🏠 главное меню") { sendTelegramMenu("🌿 <b>GrowBox</b>\nВыберите раздел управления 👇", tgMainKeyboard()); return; }
+  if (cmd == "🎛️ управление") { sendTelegramInline("🎛️ <b>Управление устройствами</b>\nВыберите действие:", tgControlInlineKeyboard()); return; }
+  if (cmd == "🚿 полив") { String s = "🚿 <b>Полив</b>\n"; for (int i=0;i<3;i++) s += "Горшок #" + String(i+1) + ": " + String(soilConnected[i] ? String(soilMoisture[i]) + "%" : "датчик OFF") + "\n"; s += "Длительность: " + String(wateringDurationMs/1000) + " сек"; if (activeWateringZone >= 0) s += "\n⏳ Сейчас поливается горшок #" + String(activeWateringZone+1); if (enableSafetySensors && isWaterLow) s += "\n⚠️ Низкий уровень воды"; if (enableSafetySensors && isFloodDetected) s += "\n🚨 Протечка"; sendTelegramInline(s, tgWaterInlineKeyboard()); return; }
+  if (cmd == "🌱 режим") { sendTelegramInline("🌱 <b>Режим</b>\nТекущий: " + String(currentStage == STAGE_VEG ? "Вегетация" : (currentStage == STAGE_BLOOM ? "Цветение" : "Сушка 60/60")) + "\nДень: " + String(getGrowDay()), tgStageInlineKeyboard()); return; }
   if (cmd == "📊 статус") { handleTelegramCommand("/status"); return; }
-  if (cmd == "⚙️ настройки" || cmd == "⚙️ показать настройки") { sendTelegramMenu("⚙️ <b>Настройки GrowBox</b>", tgSettingsKeyboard()); handleTelegramCommand("/settings"); return; }
-  if (cmd == "🔌 датчики") { sendTelegramMenu("🔌 <b>Датчики</b>\nПроверка и автоопределение:", tgSensorKeyboard()); return; }
+  if (cmd == "⚙️ настройки" || cmd == "⚙️ показать настройки") { handleTelegramCommand("/settings"); return; }
+  if (cmd == "🔌 датчики") { String s = "🔌 <b>Датчики</b>\nDHT22: " + String(dhtConnected ? "✅" : "❌") + "\nDS18B20: " + String(ds18Connected ? "✅" : "❌") + "\nПочва: " + String(soilConnected[0] ? "✅" : "❌") + " / " + String(soilConnected[1] ? "✅" : "❌") + " / " + String(soilConnected[2] ? "✅" : "❌"); sendTelegramInline(s, tgSensorInlineKeyboard()); return; }
   if (cmd == "⚡ реле") { sendTelegramMenu("⚡ <b>Управление исполнительными устройствами</b>", tgRelayKeyboard()); return; }
   if (cmd == "🌱 режим") { sendTelegramMenu("🌱 <b>Стадия выращивания</b>\nВыберите режим:", tgStageKeyboard()); return; }
   if (cmd == "⬅️ настройки") { sendTelegramMenu("⚙️ <b>Настройки GrowBox</b>", tgSettingsKeyboard()); return; }
@@ -1341,15 +1377,39 @@ void checkTelegramUpdates() {
       callbackChat.trim();
 
       if (callbackChat == tgChatId && callbackData.length() > 0) {
-        if (callbackData == "water:0") {
-          answerTelegramCallback(callbackId, "Полив горшка #1");
-          triggerWatering(0);
-        } else if (callbackData == "water:1") {
-          answerTelegramCallback(callbackId, "Полив горшка #2");
-          triggerWatering(1);
-        } else if (callbackData == "water:2") {
-          answerTelegramCallback(callbackId, "Полив горшка #3");
-          triggerWatering(2);
+        if (callbackData == "water:0" || callbackData == "water:1" || callbackData == "water:2") {
+          int zone = callbackData.substring(6).toInt();
+          if (activeWateringZone >= 0) answerTelegramCallback(callbackId, "Полив уже идёт: горшок #" + String(activeWateringZone + 1));
+          else if (enableSafetySensors && (isWaterLow || isFloodDetected)) answerTelegramCallback(callbackId, isFloodDetected ? "Полив заблокирован: протечка" : "Полив заблокирован: низкий уровень воды");
+          else { triggerWatering(zone); answerTelegramCallback(callbackId, "Полив горшка #" + String(zone + 1) + " запущен"); }
+        } else if (callbackData.startsWith("mode:")) {
+          String rest = callbackData.substring(5); int sep = rest.indexOf(':');
+          if (sep > 0) {
+            String dev = rest.substring(0, sep); OverrideMode mode = parseModeArg(rest.substring(sep + 1));
+            if (dev == "all") { allAuto(); answerTelegramCallback(callbackId, "Все устройства: AUTO"); }
+            else if (setDeviceMode(dev, mode)) answerTelegramCallback(callbackId, dev + ": " + modeLabel(mode));
+            else answerTelegramCallback(callbackId, "Неизвестное устройство");
+            sendTelegramInline("🎛️ <b>Управление устройствами</b>\nВыберите следующее действие:", tgControlInlineKeyboard());
+          }
+        } else if (callbackData.startsWith("stage:")) {
+          String stage = callbackData.substring(6);
+          if (stage == "veg") { setGrowStage(STAGE_VEG); answerTelegramCallback(callbackId, "Вегетация"); }
+          else if (stage == "bloom") { setGrowStage(STAGE_BLOOM); answerTelegramCallback(callbackId, "Цветение"); }
+          else if (stage == "dry") { setGrowStage(STAGE_DRY); answerTelegramCallback(callbackId, "Сушка 60/60"); }
+          else if (stage == "reset") { if (!ntpReady()) answerTelegramCallback(callbackId, "NTP ещё не готов"); else { startNewCycle(); answerTelegramCallback(callbackId, "Новый цикл: день 1"); } }
+          sendTelegramInline("🌱 <b>Режим:</b> " + String(currentStage == STAGE_VEG ? "Вегетация" : (currentStage == STAGE_BLOOM ? "Цветение" : "Сушка 60/60")) + "\nДень: " + String(getGrowDay()), tgStageInlineKeyboard());
+        } else if (callbackData == "sensor:discover") {
+          discoverSensors(true); answerTelegramCallback(callbackId, "Автоопределение завершено");
+          sendTelegramInline("🔌 <b>Датчики обновлены</b>\nDHT22 GPIO " + String(dhtPin) + "\nПочва GPIO " + String(soilPins[0]) + ", " + String(soilPins[1]) + ", " + String(soilPins[2]), tgSensorInlineKeyboard());
+        } else if (callbackData == "sensor:status") {
+          answerTelegramCallback(callbackId, "Статус датчиков");
+          sendTelegramInline("🔌 <b>Датчики</b>\nDHT22: " + String(dhtConnected ? "✅" : "❌") + "\nDS18B20: " + String(ds18Connected ? "✅" : "❌") + "\nПочва: " + String(soilConnected[0] ? "✅" : "❌") + " / " + String(soilConnected[1] ? "✅" : "❌") + " / " + String(soilConnected[2] ? "✅" : "❌"), tgSensorInlineKeyboard());
+        } else if (callbackData == "status:refresh") {
+          answerTelegramCallback(callbackId, "Обновляю…"); handleTelegramCommand("/status");
+        } else if (callbackData == "menu:control") {
+          answerTelegramCallback(callbackId, "Управление"); sendTelegramInline("🎛️ <b>Управление устройствами</b>", tgControlInlineKeyboard());
+        } else if (callbackData == "menu:home") {
+          answerTelegramCallback(callbackId, "Главное меню"); sendTelegramMenu("🌿 <b>GrowBox</b>\nВыберите раздел управления 👇", tgMainKeyboard());
         }
       }
     }
