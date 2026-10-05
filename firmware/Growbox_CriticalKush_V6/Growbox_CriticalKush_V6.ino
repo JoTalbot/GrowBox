@@ -788,9 +788,9 @@ String tgStatusText() {
   s += "🪴 <b>Почва</b>\n";
   for (int i = 0; i < 3; i++) s += "  #" + String(i + 1) + "  " + String(soilConnected[i] ? String(soilMoisture[i]) + "%" : "❌ OFF") + "\n";
   s += "\n⚡ <b>Устройства</b>\n";
-  s += "💡 " + modeLabel(modeLight) + "   🌀 " + modeLabel(modeExhaust) + "\n";
-  s += "🔥 " + modeLabel(modeHeater) + "   💨 " + modeLabel(modeFan) + "\n";
-  s += "💧 " + modeLabel(modeHumid) + "\n\n";
+  s += String("💡 ") + modeLabel(modeLight) + "   🌀 " + modeLabel(modeExhaust) + "\n";
+  s += String("🔥 ") + modeLabel(modeHeater) + "   💨 " + modeLabel(modeFan) + "\n";
+  s += String("💧 ") + modeLabel(modeHumid) + "\n\n";
   s += activeWateringZone >= 0 ? "🚿 <b>Полив:</b> горшок #" + String(activeWateringZone + 1) + " ⏳\n" : "🚿 <b>Полив:</b> нет\n";
   s += "🌱 <b>" + String(currentStage == STAGE_VEG ? "Вегетация" : (currentStage == STAGE_BLOOM ? "Цветение" : "Сушка 60/60")) + "</b> • день " + String(getGrowDay());
   if (enableSafetySensors && isWaterLow) s += "\n\n⚠️ <b>Низкий уровень воды</b>";
