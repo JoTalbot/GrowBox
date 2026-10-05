@@ -207,7 +207,7 @@ String inboxUrl = "";
 bool remoteEnabled = false;
 bool autoOta = true;
 unsigned long lastVersionCheck = 0;
-const unsigned long VERSION_CHECK_MS = 15UL * 60UL * 1000UL;
+const unsigned long VERSION_CHECK_MS = 5UL * 60UL * 1000UL;
 String lastRemoteEvent = "-";
 String lastOtaResult = "-";
 unsigned long lastRemotePoll = 0;
@@ -813,7 +813,12 @@ bool editTelegramMessage(long messageId, const String& msg, const String& inline
 
 void sendOrUpdateTelegramStatus() {
   if (!tgEnabled) return;
-  if (tgStatusMessageId > 0 && editTelegramMessage(tgStatusMessageId, tgStatusText(), tgStatusInlineKeyboard())) return;
+  if (tgStatusMessageId > 0) {
+    // Never create a replacement automatically. A failed edit must not turn
+    // the 10-second status refresh into an endless stream of messages.
+    editTelegramMessage(tgStatusMessageId, tgStatusText(), tgStatusInlineKeyboard());
+    return;
+  }
 
   WiFiClientSecure client;
   client.setInsecure();
@@ -1487,6 +1492,7 @@ void checkTelegramUpdates() {
           if (activeWateringZone >= 0) answerTelegramCallback(callbackId, "Полив уже идёт: горшок #" + String(activeWateringZone + 1));
           else if (enableSafetySensors && (isWaterLow || isFloodDetected)) answerTelegramCallback(callbackId, isFloodDetected ? "Полив заблокирован: протечка" : "Полив заблокирован: низкий уровень воды");
           else { triggerWatering(zone); answerTelegramCallback(callbackId, "Полив горшка #" + String(zone + 1) + " запущен"); }
+          if (callbackMsgId > 0) editTelegramMessage(callbackMsgId, tgStatusText(), tgStatusInlineKeyboard());
         } else if (callbackData.startsWith("mode:")) {
           String rest = callbackData.substring(5); int sep = rest.indexOf(':');
           if (sep > 0) {
@@ -1494,12 +1500,12 @@ void checkTelegramUpdates() {
             if (dev == "all") { allAuto(); answerTelegramCallback(callbackId, "Все устройства: AUTO"); }
             else if (setDeviceMode(dev, mode)) answerTelegramCallback(callbackId, dev + ": " + modeLabel(mode));
             else answerTelegramCallback(callbackId, "Неизвестное устройство");
-            if (callbackMsgId > 0) editTelegramMessage(callbackMsgId, "🎛️ <b>Управление устройствами</b>\nВыберите следующее действие:", tgControlInlineKeyboard()); else sendTelegramInline("🎛️ <b>Управление устройствами</b>\nВыберите следующее действие:", tgControlInlineKeyboard());
+            if (callbackMsgId > 0) editTelegramMessage(callbackMsgId, "🎛️ <b>Управление устройствами</b>\nВыберите следующее действие:", tgControlInlineKeyboard());
           }
         } else if (callbackData == "status:refresh") {
           answerTelegramCallback(callbackId, "Обновлено"); sendOrUpdateTelegramStatus();
         } else if (callbackData == "menu:control") {
-          answerTelegramCallback(callbackId, "Управление"); sendTelegramInline("🎛️ <b>Управление устройствами</b>", tgControlInlineKeyboard());
+          answerTelegramCallback(callbackId, "Управление"); if (callbackMsgId > 0) editTelegramMessage(callbackMsgId, "🎛️ <b>Управление устройствами</b>", tgControlInlineKeyboard()); else sendTelegramInline("🎛️ <b>Управление устройствами</b>", tgControlInlineKeyboard());
         } else if (callbackData == "menu:home") {
           answerTelegramCallback(callbackId, "Главное меню"); sendTelegramMenu("🌿 <b>GrowBox</b>\nВыберите раздел управления 👇", tgMainKeyboard());
         }
