@@ -175,6 +175,7 @@ int tgLastHttpCode = 0;
 String camIp      = "http://esp32-cam.local";
 bool tgEnabled    = false;
 long lastTgUpdateId = 0;
+long lastTgHandledId = 0;
 unsigned long lastTgPoll = 0;
 const unsigned long TG_POLL_INTERVAL = 3500;
 unsigned long lastTgAlertTime = 0;
@@ -628,6 +629,31 @@ String urlEncode(const String& value) {
   return encoded;
 }
 
+void telegramSyncOffset() {
+  if (!tgEnabled || tgBotToken.length() < 15 || tgChatId.length() < 3 || WiFi.status() != WL_CONNECTED) return;
+  WiFiClientSecure client;
+  client.setInsecure();
+  HTTPClient http;
+  http.setTimeout(5000);
+  String url = String("https://api.telegram.org/bot") + tgBotToken + "/getUpdates?offset=-1&limit=1&timeout=0";
+  if (!http.begin(client, url)) return;
+  int code = http.GET();
+  String body = http.getString();
+  http.end();
+  if (code < 200 || code >= 300 || body.indexOf("\"ok\":true") < 0) return;
+  int p = body.indexOf("\"update_id\":");
+  if (p >= 0) {
+    int e = body.indexOf(",", p);
+    if (e < 0) e = body.indexOf("}", p);
+    if (e > p) {
+      long id = body.substring(p + 12, e).toInt();
+      if (id > lastTgUpdateId) lastTgUpdateId = id;
+      lastTgHandledId = lastTgUpdateId;
+    }
+  }
+  tgLastError = "-";
+}
+
 void telegramInit() {
   if (!tgEnabled || tgBotToken.length() < 15 || tgChatId.length() < 3) {
     tgLastError = "telegram disabled/not configured";
@@ -677,6 +703,7 @@ void telegramInit() {
     return;
   }
 
+  telegramSyncOffset();
   tgLastError = "-";
 }
 
@@ -1365,10 +1392,13 @@ void checkTelegramUpdates() {
     String update = response.substring(updateIndex, chunkEnd);
 
     int idEnd = update.indexOf(",");
-    if (idEnd > 0) {
-      long uId = update.substring(12, idEnd).toInt();
-      if (uId > lastTgUpdateId) lastTgUpdateId = uId;
+    long uId = -1;
+    if (idEnd > 0) uId = update.substring(12, idEnd).toInt();
+    if (uId >= 0 && uId <= lastTgHandledId) {
+      updateIndex = nextUpdate;
+      continue;
     }
+    if (uId > lastTgUpdateId) lastTgUpdateId = uId;
 
     int callbackIdx = update.indexOf("\"callback_query\":");
     if (callbackIdx >= 0) {
@@ -1437,6 +1467,12 @@ void checkTelegramUpdates() {
       }
     }
 
+    if (uId >= 0) {
+      lastTgHandledId = uId;
+      prefs.begin("growbox", false);
+      prefs.putLong("tgUpd", lastTgHandledId);
+      prefs.end();
+    }
     updateIndex = nextUpdate;
   }
 
@@ -2003,6 +2039,8 @@ void setup() {
   tgChatId = prefs.getString("tgChat", "");
   camIp = prefs.getString("camIp", "http://esp32-cam.local");
   tgEnabled = prefs.getBool("tgEn", false);
+  lastTgHandledId = prefs.getLong("tgUpd", 0);
+  lastTgUpdateId = lastTgHandledId;
   for (int i = 0; i < 3; i++) {
     soilCalibDry[i] = prefs.getInt(("dry" + String(i)).c_str(), 3200);
     soilCalibWet[i] = prefs.getInt(("wet" + String(i)).c_str(), 1400);
