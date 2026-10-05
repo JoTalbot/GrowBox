@@ -33,10 +33,10 @@ void loadRemoteSettings() {
   // Policy v3 also repairs devices that were left with autoOta=false by an older
   // build. After migration the setting remains user-changeable.
   int otaPolicyVersion = prefs.getInt("otaPolicyV", 0);
-  if (otaPolicyVersion < 3) {
+  if (otaPolicyVersion < 4) {
     autoOta = true;
     prefs.putBool("autoOta", true);
-    prefs.putInt("otaPolicyV", 3);
+    prefs.putInt("otaPolicyV", 4);
   }
   lastInboxId = prefs.getLong("inboxId", lastInboxId);
   String ns = prefs.getString("ntfySince", "");
