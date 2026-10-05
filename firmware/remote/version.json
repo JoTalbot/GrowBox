@@ -1,5 +1,5 @@
 {
-  "version": "6.5.22",
-  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.22/GrowBox-v6.5.22.bin",
-  "notes": "Telegram: watering buttons moved to inline controls shown with Status"
+  "version": "6.5.23",
+  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.23/GrowBox-v6.5.23.bin",
+  "notes": "Telegram UX: mobile-first inline control panels for devices, watering, stages and sensors"
 }
