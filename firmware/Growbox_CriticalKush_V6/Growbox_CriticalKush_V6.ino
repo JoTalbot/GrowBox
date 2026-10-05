@@ -842,8 +842,6 @@ String tgStatusText() {
 String tgStatusInlineKeyboard() {
   return "{\"inline_keyboard\":[[{\"text\":\"🚿 Горшок 1\",\"callback_data\":\"water:0\"},{\"text\":\"🚿 Горшок 2\",\"callback_data\":\"water:1\"},{\"text\":\"🚿 Горшок 3\",\"callback_data\":\"water:2\"}],[{\"text\":\"🎛️ Управление\",\"callback_data\":\"menu:control\"},{\"text\":\"🔄 Обновить\",\"callback_data\":\"status:refresh\"}],[{\"text\":\"🏠 Главное меню\",\"callback_data\":\"menu:home\"}]]}";
 }
-String tgDeviceKeyboard(const String& icon, const String& name) { return tgMainKeyboard(); }
-
 String tgControlInlineKeyboard() {
   return "{\"inline_keyboard\":["
          "[{\"text\":\"💡 Свет ВКЛ\",\"callback_data\":\"mode:light:on\"},{\"text\":\"AUTO\",\"callback_data\":\"mode:light:auto\"},{\"text\":\"ВЫКЛ\",\"callback_data\":\"mode:light:off\"}],"
@@ -1058,7 +1056,7 @@ void handleTelegramCommand(String cmd) {
     if (cmd == "🌀 вент") { icon = "🌀"; name = "Вент"; }
     else if (cmd == "🔥 тепл") { icon = "🔥"; name = "Тепл"; }
     else if (cmd == "💨 обдув") { icon = "💨"; name = "Обдув"; }
-    sendTelegramMenu("🎛️ <b>" + name + "</b>\nВыберите режим:", tgDeviceKeyboard(icon, name)); return;
+    sendTelegramMenu("🎛️ <b>" + name + "</b>\nВыберите режим:", tgMainKeyboard()); return;
   }
   if (cmd.startsWith("💡 свет ") || cmd.startsWith("🌀 вент ") || cmd.startsWith("🔥 тепл ") || cmd.startsWith("💨 обдув ")) {
     String dev = ""; String title = "";
