@@ -176,7 +176,10 @@ String camIp      = "http://esp32-cam.local";
 bool tgEnabled    = false;
 long lastTgUpdateId = 0;
 long lastTgHandledId = 0;
+long tgStatusMessageId = 0;
 unsigned long lastTgPoll = 0;
+unsigned long lastTgStatusPush = 0;
+const unsigned long TG_STATUS_INTERVAL = 10000;
 const unsigned long TG_POLL_INTERVAL = 3500;
 unsigned long lastTgAlertTime = 0;
 unsigned long lastPowerAlertTime = 0;
@@ -784,6 +787,68 @@ void sendTelegramInline(String msg, const String& inlineKeyboard) {
   feedWatchdog();
 }
 
+bool editTelegramMessage(long messageId, const String& msg, const String& inlineKeyboard) {
+  if (!tgEnabled || messageId <= 0 || tgBotToken.length() < 15 || tgChatId.length() < 3 || WiFi.status() != WL_CONNECTED) return false;
+  WiFiClientSecure client;
+  client.setInsecure();
+  HTTPClient http;
+  http.setTimeout(5000);
+  http.setUserAgent("GrowBox/" FIRMWARE_VERSION);
+  String url = String("https://api.telegram.org/bot") + tgBotToken + "/editMessageText";
+  if (!http.begin(client, url)) return false;
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  String payload = "chat_id=" + urlEncode(tgChatId) +
+                   "&message_id=" + String(messageId) +
+                   "&text=" + urlEncode(msg) +
+                   "&parse_mode=HTML" +
+                   "&reply_markup=" + urlEncode(inlineKeyboard);
+  int code = http.POST(payload);
+  tgLastHttpCode = code;
+  if (code >= 200 && code < 300) tgLastError = "-";
+  else tgLastError = "edit HTTP " + String(code);
+  http.end();
+  feedWatchdog();
+  return code >= 200 && code < 300;
+}
+
+void sendOrUpdateTelegramStatus() {
+  if (!tgEnabled) return;
+  if (tgStatusMessageId > 0 && editTelegramMessage(tgStatusMessageId, tgStatusText(), tgStatusInlineKeyboard())) return;
+
+  WiFiClientSecure client;
+  client.setInsecure();
+  HTTPClient http;
+  http.setTimeout(5000);
+  http.setUserAgent("GrowBox/" FIRMWARE_VERSION);
+  String url = String("https://api.telegram.org/bot") + tgBotToken + "/sendMessage";
+  if (!http.begin(client, url)) return;
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  String payload = "chat_id=" + urlEncode(tgChatId) +
+                   "&text=" + urlEncode(tgStatusText()) +
+                   "&parse_mode=HTML&reply_markup=" + urlEncode(tgStatusInlineKeyboard());
+  int code = http.POST(payload);
+  String body = http.getString();
+  tgLastHttpCode = code;
+  if (code >= 200 && code < 300) {
+    int p = body.indexOf("\"message_id\":");
+    if (p >= 0) {
+      int e = body.indexOf(",", p);
+      if (e > p) {
+        tgStatusMessageId = body.substring(p + 14, e).toInt();
+        prefs.begin("growbox", false);
+        prefs.putLong("tgStatusMsg", tgStatusMessageId);
+        prefs.end();
+      }
+    }
+    tgLastError = "-";
+  } else {
+    tgStatusMessageId = 0;
+    tgLastError = "status HTTP " + String(code);
+  }
+  http.end();
+  feedWatchdog();
+}
+
 void answerTelegramCallback(const String& callbackId, const String& text = "") {
   if (!tgEnabled || callbackId.length() < 3 || WiFi.status() != WL_CONNECTED) return;
   WiFiClientSecure client;
@@ -1035,7 +1100,7 @@ void handleTelegramCommand(String cmd) {
   if (cmd == "🎛️ управление") { sendTelegramInline("🎛️ <b>Управление устройствами</b>\nВыберите действие:", tgControlInlineKeyboard()); return; }
   if (cmd == "🚿 полив") { String s = "🚿 <b>Полив</b>\n"; for (int i=0;i<3;i++) s += "Горшок #" + String(i+1) + ": " + String(soilConnected[i] ? String(soilMoisture[i]) + "%" : "датчик OFF") + "\n"; s += "Длительность: " + String(wateringDurationMs/1000) + " сек"; if (activeWateringZone >= 0) s += "\n⏳ Сейчас поливается горшок #" + String(activeWateringZone+1); if (enableSafetySensors && isWaterLow) s += "\n⚠️ Низкий уровень воды"; if (enableSafetySensors && isFloodDetected) s += "\n🚨 Протечка"; sendTelegramInline(s, tgWaterInlineKeyboard()); return; }
   if (cmd == "🌱 режим") { sendTelegramMenu("🌱 <b>Стадия выращивания</b>\nВыберите режим:", tgStageKeyboard()); return; }
-  if (cmd == "📊 статус") { sendTelegramInline(tgStatusText(), tgStatusInlineKeyboard()); return; }
+  if (cmd == "📊 статус") { sendOrUpdateTelegramStatus(); return; }
   if (cmd == "⚙️ настройки" || cmd == "⚙️ показать настройки") { handleTelegramCommand("/settings"); return; }
   if (cmd == "🔌 датчики") { sendTelegramMenu("🔌 <b>Датчики</b>\nПроверка и автоопределение:", tgSensorKeyboard()); return; }
   if (cmd == "⚡ реле") { sendTelegramMenu("⚡ <b>Управление исполнительными устройствами</b>", tgRelayKeyboard()); return; }
@@ -1412,6 +1477,9 @@ void checkTelegramUpdates() {
       String callbackData = (callbackDataIdx >= 0 && callbackDataEnd > callbackDataIdx) ? telegramJsonUnescape(update.substring(callbackDataIdx + 8, callbackDataEnd)) : "";
       String callbackChat = (callbackChatIdx >= 0 && callbackChatEnd > callbackChatIdx) ? update.substring(callbackChatIdx + 13, callbackChatEnd) : "";
       callbackChat.trim();
+      int callbackMsgId = 0;
+      int callbackMsgIdx = update.indexOf("\"message_id\":", callbackIdx);
+      if (callbackMsgIdx >= 0) { int callbackMsgEnd = update.indexOf(",", callbackMsgIdx); if (callbackMsgEnd > callbackMsgIdx) callbackMsgId = update.substring(callbackMsgIdx + 13, callbackMsgEnd).toInt(); }
 
       if (callbackChat == tgChatId && callbackData.length() > 0) {
         if (callbackData == "water:0" || callbackData == "water:1" || callbackData == "water:2") {
@@ -1426,10 +1494,10 @@ void checkTelegramUpdates() {
             if (dev == "all") { allAuto(); answerTelegramCallback(callbackId, "Все устройства: AUTO"); }
             else if (setDeviceMode(dev, mode)) answerTelegramCallback(callbackId, dev + ": " + modeLabel(mode));
             else answerTelegramCallback(callbackId, "Неизвестное устройство");
-            sendTelegramInline("🎛️ <b>Управление устройствами</b>\nВыберите следующее действие:", tgControlInlineKeyboard());
+            if (callbackMsgId > 0) editTelegramMessage(callbackMsgId, "🎛️ <b>Управление устройствами</b>\nВыберите следующее действие:", tgControlInlineKeyboard()); else sendTelegramInline("🎛️ <b>Управление устройствами</b>\nВыберите следующее действие:", tgControlInlineKeyboard());
           }
         } else if (callbackData == "status:refresh") {
-          answerTelegramCallback(callbackId, "Обновлено"); sendTelegramInline(tgStatusText(), tgStatusInlineKeyboard());
+          answerTelegramCallback(callbackId, "Обновлено"); sendOrUpdateTelegramStatus();
         } else if (callbackData == "menu:control") {
           answerTelegramCallback(callbackId, "Управление"); sendTelegramInline("🎛️ <b>Управление устройствами</b>", tgControlInlineKeyboard());
         } else if (callbackData == "menu:home") {
@@ -2041,6 +2109,7 @@ void setup() {
   tgEnabled = prefs.getBool("tgEn", false);
   lastTgHandledId = prefs.getLong("tgUpd", 0);
   lastTgUpdateId = lastTgHandledId;
+  tgStatusMessageId = prefs.getLong("tgStatusMsg", 0);
   for (int i = 0; i < 3; i++) {
     soilCalibDry[i] = prefs.getInt(("dry" + String(i)).c_str(), 3200);
     soilCalibWet[i] = prefs.getInt(("wet" + String(i)).c_str(), 1400);
@@ -2351,6 +2420,11 @@ void loop() {
   if (tgEnabled && (currentMillis - lastTgPoll >= TG_POLL_INTERVAL)) {
     lastTgPoll = currentMillis;
     checkTelegramUpdates();
+  }
+
+  if (tgEnabled && tgStatusMessageId > 0 && (currentMillis - lastTgStatusPush >= TG_STATUS_INTERVAL)) {
+    lastTgStatusPush = currentMillis;
+    editTelegramMessage(tgStatusMessageId, tgStatusText(), tgStatusInlineKeyboard());
   }
 
   if (currentStage != STAGE_DRY) {
