@@ -842,35 +842,6 @@ String tgStatusText() {
 String tgStatusInlineKeyboard() {
   return "{\"inline_keyboard\":[[{\"text\":\"🚿 Горшок 1\",\"callback_data\":\"water:0\"},{\"text\":\"🚿 Горшок 2\",\"callback_data\":\"water:1\"},{\"text\":\"🚿 Горшок 3\",\"callback_data\":\"water:2\"}],[{\"text\":\"🎛️ Управление\",\"callback_data\":\"menu:control\"},{\"text\":\"🔄 Обновить\",\"callback_data\":\"status:refresh\"}],[{\"text\":\"🏠 Главное меню\",\"callback_data\":\"menu:home\"}]]}";
 }
-String tgMainKeyboard() {
-  return "{\"keyboard\":[[\"💡 Свет\",\"🌀 Вент\"],[\"🔥 Тепл\",\"💨 Обдув\"],[\"🔄 Всё AUTO\"],[\"⬅️ Настройки\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
-}
-String tgMainKeyboard() {
-  return "{\"keyboard\":[[\"🚿 Горшок 1\",\"🚿 Горшок 2\",\"🚿 Горшок 3\"],[\"⬅️ Статус\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
-}
-String tgMainKeyboard() {
-  return "{\"keyboard\":[[\"🌱 Вегетация\",\"🌸 Цветение\"],[\"🍂 Сушка 60/60\",\"📅 Сброс дня\"],[\"⬅️ Главное меню\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
-}
-String tgMainKeyboard() {
-  return "{\"keyboard\":[[\"🔌 Обнаружить датчики\",\"🔌 Статус датчиков\"],[\"⬅️ Настройки\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
-}
-String tgMainKeyboard() {
-  return "{\"keyboard\":[[\"⚙️ Показать настройки\",\"🔌 Датчики\"],[\"🌱 Режим\",\"⚡ Реле\"],[\"🔄 Всё AUTO\"],[\"⬅️ Главное меню\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
-}
-String tgMainKeyboard() {
-  return "{\"keyboard\":[[\"📦 Версия\",\"🔎 Проверить OTA\"],[\"⬅️ Главное меню\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
-}
-String tgMainKeyboard() {
-  return "{\"keyboard\":[[\"🛰️ Remote ON\",\"🛰️ Remote OFF\"],[\"📥 Pull\",\"🔁 Перезагрузка\"],[\"⬅️ Главное меню\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
-}
-String tgMainKeyboard() {
-  return "{\"keyboard\":[[\"📷 Получить фото\",\"⬅️ Главное меню\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
-}
-String tgDeviceKeyboard(const String& icon, const String& name) {
-  return "{\"keyboard\":[[\"" + icon + " ON\",\"" + icon + " OFF\",\"" + icon + " AUTO\"],[\"⬅️ Настройки\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
-}
-
-
 String tgControlInlineKeyboard() {
   return "{\"inline_keyboard\":["
          "[{\"text\":\"💡 Свет ВКЛ\",\"callback_data\":\"mode:light:on\"},{\"text\":\"AUTO\",\"callback_data\":\"mode:light:auto\"},{\"text\":\"ВЫКЛ\",\"callback_data\":\"mode:light:off\"}],"
