@@ -785,7 +785,7 @@ String tgStatusText() {
   String s = "🌿 <b>GrowBox</b>\n";
   s += "🌡️ " + String(temperature,1) + "°C  💧 " + String(humidity,0) + "%  💨 VPD " + String(vpd,2) + "\n";
   s += "🪴 " + String(soilConnected[0] ? String(soilMoisture[0])+"%" : "❌") + " / " + String(soilConnected[1] ? String(soilMoisture[1])+"%" : "❌") + " / " + String(soilConnected[2] ? String(soilMoisture[2])+"%" : "❌") + "\n";
-  s += "⚡ " + modeLabel(modeLight) + " / " + modeLabel(modeExhaust) + " / " + modeLabel(modeHeater) + " / " + modeLabel(modeFan) + " / " + modeLabel(modeHumid) + "\n";
+  s += String("⚡ ") + modeLabel(modeLight) + " / " + modeLabel(modeExhaust) + " / " + modeLabel(modeHeater) + " / " + modeLabel(modeFan) + " / " + modeLabel(modeHumid) + "\n";
   s += activeWateringZone >= 0 ? "🚿 Горшок #" + String(activeWateringZone+1) + " ⏳" : "🚿 Полив: нет";
   s += "\n🌱 " + String(currentStage == STAGE_VEG ? "Вегетация" : (currentStage == STAGE_BLOOM ? "Цветение" : "Сушка")) + " • день " + String(getGrowDay());
   if (enableSafetySensors && isWaterLow) s += "\n⚠️ Вода";
