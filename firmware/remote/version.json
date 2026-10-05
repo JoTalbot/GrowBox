@@ -1,5 +1,5 @@
 {
-  "version": "6.5.24",
-  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.24/GrowBox-v6.5.24.bin",
-  "notes": "Telegram UX: unified compact status dashboard, inline controls and consistent mobile navigation; compact OTA-safe build"
+  "version": "6.5.25",
+  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.25/GrowBox-v6.5.25.bin",
+  "notes": "Telegram polling recovery: idempotent update handling and reboot-safe offset"
 }
