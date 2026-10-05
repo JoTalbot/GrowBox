@@ -872,12 +872,6 @@ void answerTelegramCallback(const String& callbackId, const String& text = "") {
 String tgMainKeyboard() {
   return "{\"keyboard\":[[\"📊 Статус\",\"🎛️ Управление\"],[\"🚿 Полив\",\"🌱 Режим\"],[\"🔌 Датчики\",\"⚙️ Настройки\"],[\"📦 Обновления\",\"🛰️ Сервис\"],[\"📷 Камера\",\"🔄 Всё AUTO\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
 }
-String tgBackKeyboard() {
-  return "{\"keyboard\":[[\"⬅️ Главное меню\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
-}
-String tgStatusKeyboard() {
-  return "{\"keyboard\":[[\"💡 Свет ВКЛ\",\"💡 Свет ВЫКЛ\",\"💡 Свет AUTO\"],[\"🌀 Вент ВКЛ\",\"🌀 Вент ВЫКЛ\",\"🌀 Вент AUTO\"],[\"🔥 Тепл ВКЛ\",\"🔥 Тепл ВЫКЛ\",\"🔥 Тепл AUTO\"],[\"⬅️ Главное меню\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
-}
 String tgStatusText() {
   String s = "🌿 <b>GrowBox</b>\n";
   s += "🌡️ " + String(temperature,1) + "°C  💧 " + String(humidity,0) + "%  💨 VPD " + String(vpd,2) + "\n";
