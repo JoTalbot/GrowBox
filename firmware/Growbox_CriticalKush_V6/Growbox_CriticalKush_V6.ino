@@ -49,9 +49,9 @@
 
 #define WDT_TIMEOUT_SEC   45
 #ifdef GROWBOX_FORCE_DRY
-#define FIRMWARE_VERSION  "6.5.23-dry"
+#define FIRMWARE_VERSION  "6.5.24-dry"
 #else
-#define FIRMWARE_VERSION  "6.5.23"
+#define FIRMWARE_VERSION  "6.5.24"
 #endif
 
 enum GrowStage {
@@ -781,6 +781,24 @@ String tgBackKeyboard() {
 String tgStatusKeyboard() {
   return "{\"keyboard\":[[\"💡 Свет ВКЛ\",\"💡 Свет ВЫКЛ\",\"💡 Свет AUTO\"],[\"🌀 Вент ВКЛ\",\"🌀 Вент ВЫКЛ\",\"🌀 Вент AUTO\"],[\"🔥 Тепл ВКЛ\",\"🔥 Тепл ВЫКЛ\",\"🔥 Тепл AUTO\"],[\"⬅️ Главное меню\"]],\"resize_keyboard\":true,\"is_persistent\":true}";
 }
+String tgStatusText() {
+  String s = "🌿 <b>GrowBox</b>\n\n";
+  s += "🌡️ <b>" + String(temperature, 1) + "°C</b>   💧 <b>" + String(humidity, 0) + "%</b>\n";
+  s += "💨 VPD <b>" + String(vpd, 2) + "</b>\n\n";
+  s += "🪴 <b>Почва</b>\n";
+  for (int i = 0; i < 3; i++) s += "  #" + String(i + 1) + "  " + String(soilConnected[i] ? String(soilMoisture[i]) + "%" : "❌ OFF") + "\n";
+  s += "\n⚡ <b>Устройства</b>\n";
+  s += "💡 " + modeLabel(modeLight) + "   🌀 " + modeLabel(modeExhaust) + "\n";
+  s += "🔥 " + modeLabel(modeHeater) + "   💨 " + modeLabel(modeFan) + "\n";
+  s += "💧 " + modeLabel(modeHumid) + "\n\n";
+  s += activeWateringZone >= 0 ? "🚿 <b>Полив:</b> горшок #" + String(activeWateringZone + 1) + " ⏳\n" : "🚿 <b>Полив:</b> нет\n";
+  s += "🌱 <b>" + String(currentStage == STAGE_VEG ? "Вегетация" : (currentStage == STAGE_BLOOM ? "Цветение" : "Сушка 60/60")) + "</b> • день " + String(getGrowDay());
+  if (enableSafetySensors && isWaterLow) s += "\n\n⚠️ <b>Низкий уровень воды</b>";
+  if (enableSafetySensors && isFloodDetected) s += "\n\n🚨 <b>ПРОТЕЧКА: полив заблокирован</b>";
+  if (!dhtConnected) s += "\n\n⚠️ <b>DHT22 недоступен</b>";
+  return s;
+}
+
 String tgStatusInlineKeyboard() {
   return "{\"inline_keyboard\":[[{\"text\":\"🚿 Горшок 1\",\"callback_data\":\"water:0\"},{\"text\":\"🚿 Горшок 2\",\"callback_data\":\"water:1\"},{\"text\":\"🚿 Горшок 3\",\"callback_data\":\"water:2\"}],[{\"text\":\"🎛️ Управление\",\"callback_data\":\"menu:control\"},{\"text\":\"🔄 Обновить\",\"callback_data\":\"status:refresh\"}],[{\"text\":\"🏠 Главное меню\",\"callback_data\":\"menu:home\"}]]}";
 }
@@ -997,11 +1015,11 @@ void handleTelegramCommand(String cmd) {
   else if (cmd == "🛰️ Сервис") cmd = "🛰️ сервис";
   else if (cmd == "📷 Камера") cmd = "📷 камера";
   // Telegram UI: all core controls are available through buttons.
-  if (cmd == "⬅️ главное меню" || cmd == "🏠 главное меню") { sendTelegramMenu("🌿 <b>GrowBox</b>\nВыберите раздел управления 👇", tgMainKeyboard()); return; }
+  if (cmd == "⬅️ главное меню" || cmd == "🏠 главное меню") { sendTelegramMenu("🌿 <b>GrowBox</b>\nВыберите раздел 👇\n\n📊 Статус — всё главное\n🎛️ Управление — реле\n🚿 Полив — горшки\n🌱 Режим — стадия", tgMainKeyboard()); return; }
   if (cmd == "🎛️ управление") { sendTelegramInline("🎛️ <b>Управление устройствами</b>\nВыберите действие:", tgControlInlineKeyboard()); return; }
   if (cmd == "🚿 полив") { String s = "🚿 <b>Полив</b>\n"; for (int i=0;i<3;i++) s += "Горшок #" + String(i+1) + ": " + String(soilConnected[i] ? String(soilMoisture[i]) + "%" : "датчик OFF") + "\n"; s += "Длительность: " + String(wateringDurationMs/1000) + " сек"; if (activeWateringZone >= 0) s += "\n⏳ Сейчас поливается горшок #" + String(activeWateringZone+1); if (enableSafetySensors && isWaterLow) s += "\n⚠️ Низкий уровень воды"; if (enableSafetySensors && isFloodDetected) s += "\n🚨 Протечка"; sendTelegramInline(s, tgWaterInlineKeyboard()); return; }
   if (cmd == "🌱 режим") { sendTelegramInline("🌱 <b>Режим</b>\nТекущий: " + String(currentStage == STAGE_VEG ? "Вегетация" : (currentStage == STAGE_BLOOM ? "Цветение" : "Сушка 60/60")) + "\nДень: " + String(getGrowDay()), tgStageInlineKeyboard()); return; }
-  if (cmd == "📊 статус") { handleTelegramCommand("/status"); return; }
+  if (cmd == "📊 статус") { sendTelegramInline(tgStatusText(), tgStatusInlineKeyboard()); return; }
   if (cmd == "⚙️ настройки" || cmd == "⚙️ показать настройки") { handleTelegramCommand("/settings"); return; }
   if (cmd == "🔌 датчики") { String s = "🔌 <b>Датчики</b>\nDHT22: " + String(dhtConnected ? "✅" : "❌") + "\nDS18B20: " + String(ds18Connected ? "✅" : "❌") + "\nПочва: " + String(soilConnected[0] ? "✅" : "❌") + " / " + String(soilConnected[1] ? "✅" : "❌") + " / " + String(soilConnected[2] ? "✅" : "❌"); sendTelegramInline(s, tgSensorInlineKeyboard()); return; }
   if (cmd == "⚡ реле") { sendTelegramMenu("⚡ <b>Управление исполнительными устройствами</b>", tgRelayKeyboard()); return; }
@@ -1405,7 +1423,7 @@ void checkTelegramUpdates() {
           answerTelegramCallback(callbackId, "Статус датчиков");
           sendTelegramInline("🔌 <b>Датчики</b>\nDHT22: " + String(dhtConnected ? "✅" : "❌") + "\nDS18B20: " + String(ds18Connected ? "✅" : "❌") + "\nПочва: " + String(soilConnected[0] ? "✅" : "❌") + " / " + String(soilConnected[1] ? "✅" : "❌") + " / " + String(soilConnected[2] ? "✅" : "❌"), tgSensorInlineKeyboard());
         } else if (callbackData == "status:refresh") {
-          answerTelegramCallback(callbackId, "Обновляю…"); handleTelegramCommand("/status");
+          answerTelegramCallback(callbackId, "Обновлено"); sendTelegramInline(tgStatusText(), tgStatusInlineKeyboard());
         } else if (callbackData == "menu:control") {
           answerTelegramCallback(callbackId, "Управление"); sendTelegramInline("🎛️ <b>Управление устройствами</b>", tgControlInlineKeyboard());
         } else if (callbackData == "menu:home") {
