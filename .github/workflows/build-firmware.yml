@@ -13,6 +13,7 @@ on:
       - "docs/**"
       - ".github/workflows/build-firmware.yml"
       - "firmware/remote/version.json"
+      - "firmware/remote/release-version.json"
 
 jobs:
   build:
