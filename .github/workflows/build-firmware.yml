@@ -8,6 +8,7 @@ on:
       - "firmware/Growbox_CriticalKush_V6/**"
       - "firmware/Growbox_OTA_Service/**"
       - "platformio.ini"
+      - "tools/**"
       - "phone/**"
       - "docs/**"
       - ".github/workflows/build-firmware.yml"
