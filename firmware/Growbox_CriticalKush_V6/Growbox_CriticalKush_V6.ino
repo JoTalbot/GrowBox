@@ -801,42 +801,42 @@ String tgSettingsInlineKeyboard() {
 String relayModeStatus(const char* name, bool active, OverrideMode mode) {
   String actual = active ? "🟢 АКТИВНО" : "⚪ НЕ АКТИВНО";
   String selected = mode == MODE_AUTO ? "АВТО" : (mode == MODE_ON ? "РУЧНОЙ ВКЛ" : "РУЧНОЙ ВЫКЛ");
-  return String(name) + ": " + actual + "  |  Режим: <b>" + selected + "</b>\\n";
+  return String(name) + ": " + actual + "  |  Режим: <b>" + selected + "</b>\n";
 }
 String tgStatusText() {
-  String s = "🌿 <b>GrowBox • ОБЩИЙ СТАТУС</b>\\n";
-  s += "━━━━━━━━━━━━━━━━━━\\n";
-  s += "🌡️ <b>Климат</b>\\n";
-  s += dhtConnected ? "🌡️ Температура: <b>" + String(temperature,1) + " °C</b>\\n" : "🌡️ Температура: ⚠️ датчик недоступен\\n";
-  s += dhtConnected ? "💧 Влажность: <b>" + String(humidity,0) + " %</b>  •  VPD: <b>" + String(vpd,2) + "</b>\\n" : "💧 Влажность: ⚠️ нет данных\\n";
-  s += "🪴 <b>Влажность почвы</b>\\n";
+  String s = "🌿 <b>GrowBox • ОБЩИЙ СТАТУС</b>\n";
+  s += "━━━━━━━━━━━━━━━━━━\n";
+  s += "🌡️ <b>Климат</b>\n";
+  s += dhtConnected ? "🌡️ Температура: <b>" + String(temperature,1) + " °C</b>\n" : "🌡️ Температура: ⚠️ датчик недоступен\n";
+  s += dhtConnected ? "💧 Влажность: <b>" + String(humidity,0) + " %</b>  •  VPD: <b>" + String(vpd,2) + "</b>\n" : "💧 Влажность: ⚠️ нет данных\n";
+  s += "🪴 <b>Влажность почвы</b>\n";
   for (int i = 0; i < 3; i++) {
-    s += "  Зона " + String(i + 1) + ": " + (soilConnected[i] ? "🟢 <b>" + String(soilMoisture[i]) + " %</b>" : "⚠️ датчик недоступен") + "\\n";
+    s += "  Зона " + String(i + 1) + ": " + (soilConnected[i] ? "🟢 <b>" + String(soilMoisture[i]) + " %</b>" : "⚠️ датчик недоступен") + "\n";
   }
-  s += "━━━━━━━━━━━━━━━━━━\\n";
-  s += "🔌 <b>Реле и режимы</b>\\n";
+  s += "━━━━━━━━━━━━━━━━━━\n";
+  s += "🔌 <b>Реле и режимы</b>\n";
   s += relayModeStatus("💡 Свет", stateLight, modeLight);
   s += relayModeStatus("🌀 Вытяжка", stateExhaust, modeExhaust);
   s += relayModeStatus("🔥 Обогрев", stateHeater, modeHeater);
-  s += "━━━━━━━━━━━━━━━━━━\\n";
-  s += "🌱 Стадия: <b>" + String(currentStage == STAGE_VEG ? "Вегетация" : (currentStage == STAGE_BLOOM ? "Цветение" : "Сушка")) + "</b>  •  День: <b>" + String(getGrowDay()) + "</b>\\n";
-  s += activeWateringZone >= 0 ? "🚿 Полив: 🟢 зона " + String(activeWateringZone + 1) + " работает\\n" : "🚿 Полив: ⚪ не выполняется\\n";
-  if (enableSafetySensors && isWaterLow) s += "🚨 <b>ВНИМАНИЕ: низкий уровень воды</b>\\n";
-  if (enableSafetySensors && isFloodDetected) s += "🚨 <b>АВАРИЯ: обнаружена протечка</b>\\n";
-  if (thermalShutdown) s += "🌡️ <b>ТЕРМОЗАЩИТА АКТИВНА</b>\\n";
-  if (!dhtConnected) s += "⚠️ Проверьте подключение DHT22\\n";
+  s += "━━━━━━━━━━━━━━━━━━\n";
+  s += "🌱 Стадия: <b>" + String(currentStage == STAGE_VEG ? "Вегетация" : (currentStage == STAGE_BLOOM ? "Цветение" : "Сушка")) + "</b>  •  День: <b>" + String(getGrowDay()) + "</b>\n";
+  s += activeWateringZone >= 0 ? "🚿 Полив: 🟢 зона " + String(activeWateringZone + 1) + " работает\n" : "🚿 Полив: ⚪ не выполняется\n";
+  if (enableSafetySensors && isWaterLow) s += "🚨 <b>ВНИМАНИЕ: низкий уровень воды</b>\n";
+  if (enableSafetySensors && isFloodDetected) s += "🚨 <b>АВАРИЯ: обнаружена протечка</b>\n";
+  if (thermalShutdown) s += "🌡️ <b>ТЕРМОЗАЩИТА АКТИВНА</b>\n";
+  if (!dhtConnected) s += "⚠️ Проверьте подключение DHT22\n";
   return s;
 }
 String tgControlText() {
-  String s = "🎛️ <b>УПРАВЛЕНИЕ УСТРОЙСТВАМИ</b>\\n";
-  s += "Показаны фактическое состояние и выбранный режим каждого реле.\\n";
-  s += "━━━━━━━━━━━━━━━━━━\\n";
+  String s = "🎛️ <b>УПРАВЛЕНИЕ УСТРОЙСТВАМИ</b>\n";
+  s += "Показаны фактическое состояние и выбранный режим каждого реле.\n";
+  s += "━━━━━━━━━━━━━━━━━━\n";
   s += relayModeStatus("💡 Свет", stateLight, modeLight);
   s += relayModeStatus("🌀 Вытяжка", stateExhaust, modeExhaust);
   s += relayModeStatus("🔥 Обогрев", stateHeater, modeHeater);
-  if (thermalShutdown) s += "\\n🚨 <b>Термозащита активна</b>: включение света заблокировано.";
-  if (!heaterSafetyOk()) s += "\\n⚠️ Обогрев заблокирован до появления корректных данных DHT22.";
-  s += "\\nВыберите действие:";
+  if (thermalShutdown) s += "\n🚨 <b>Термозащита активна</b>: включение света заблокировано.";
+  if (!heaterSafetyOk()) s += "\n⚠️ Обогрев заблокирован до появления корректных данных DHT22.";
+  s += "\nВыберите действие:";
   return s;
 }
 String tgStatusInlineKeyboard() {
@@ -1037,8 +1037,8 @@ void handleTelegramCommand(String cmd) {
   if (cmd == "🌱 режим") { sendTelegramInline("⚙️ <b>Настройки → Режим выращивания</b>", tgStageInlineKeyboard()); return; }
   if (cmd == "⬅️ статус") { handleTelegramCommand("/status"); return; }
   if (cmd == "📦 обновления") { sendTelegramInline("⚙️ <b>Настройки → Обновления</b>", tgUpdateInlineKeyboard()); return; }
-  if (cmd == "🛰️ сервис") { sendTelegramInline("⚙️ <b>Настройки → Сервис</b>\\nRemote: " + String(remoteEnabled ? "🟢 ВКЛ" : "⚪ ВЫКЛ") + "\\nПоследнее событие: " + lastRemoteEvent, tgServiceInlineKeyboard()); return; }
-  if (cmd == "📷 камера") { sendTelegramInline("📷 <b>ESP32-CAM</b>\\n" + camIp + "/capture", tgCameraInlineKeyboard()); return; }
+  if (cmd == "🛰️ сервис") { sendTelegramInline("⚙️ <b>Настройки → Сервис</b>\nRemote: " + String(remoteEnabled ? "🟢 ВКЛ" : "⚪ ВЫКЛ") + "\nПоследнее событие: " + lastRemoteEvent, tgServiceInlineKeyboard()); return; }
+  if (cmd == "📷 камера") { sendTelegramInline("📷 <b>ESP32-CAM</b>\n" + camIp + "/capture", tgCameraInlineKeyboard()); return; }
   if (cmd == "🚿 горшок 1") { triggerWatering(0); sendTelegramMenu("🚿 Горшок #1: команда полива отправлена.", tgMainKeyboard()); return; }
   if (cmd == "🚿 горшок 2") { triggerWatering(1); sendTelegramMenu("🚿 Горшок #2: команда полива отправлена.", tgMainKeyboard()); return; }
   if (cmd == "🚿 горшок 3") { triggerWatering(2); sendTelegramMenu("🚿 Горшок #3: команда полива отправлена.", tgMainKeyboard()); return; }
