@@ -167,7 +167,10 @@ try:
     check(bool(manifest.get("version")), "OTA manifest version is missing")
     check("v" + manifest.get("version", "") + "/" in manifest.get("url", ""),
           "OTA manifest URL must match its published version")
-    check(release_meta.get("version") == "6.5.27", "release metadata version mismatch")
+    def version_tuple(value: str) -> tuple[int, ...]:
+        return tuple(int(part) for part in value.split("."))
+    check(version_tuple(manifest.get("version", "0")) <= version_tuple(release_meta.get("version", "0")),
+          "OTA manifest must not be newer than the release metadata")
     check(release_meta.get("version") != manifest.get("version") or
           "v" + release_meta.get("version", "") + "/" in manifest.get("url", ""),
           "new OTA manifest can only point at the release matching its version")
