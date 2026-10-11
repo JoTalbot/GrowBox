@@ -1029,7 +1029,7 @@ void handleTelegramCommand(String cmd) {
   // Telegram UI: all core controls are available through buttons.
   if (cmd == "⬅️ главное меню" || cmd == "🏠 главное меню") { sendTelegramMenu("🌿 <b>GrowBox</b>\nВыберите раздел 👇\n\n📊 Статус — всё главное\n🎛️ Управление — реле\n🚿 Полив — горшки\n🌱 Режим — стадия", tgMainKeyboard()); return; }
   if (cmd == "🎛️ управление") { sendTelegramInline(tgControlText(), tgControlInlineKeyboard()); return; }
-  if (cmd == "📊 статус") { sendTelegramInline(tgStatusText(), tgStatusInlineKeyboard()); return; }
+  if (cmd == "📊 статус") { sendTelegramMenu(tgStatusText(), tgMainKeyboard()); return; }
   if (cmd == "⚙️ настройки" || cmd == "⚙️ показать настройки" || cmd == "⬅️ настройки") { handleTelegramCommand("/settings"); return; }
   // Legacy labels remain accepted, but these sections now live under Settings.
   if (cmd == "🔌 датчики") { sendTelegramInline("⚙️ <b>Настройки → Датчики</b>", tgSensorsInlineKeyboard()); return; }
