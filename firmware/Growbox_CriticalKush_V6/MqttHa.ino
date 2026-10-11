@@ -84,8 +84,6 @@ void mqttPublishDiscovery() {
   haConfig("binary_sensor", "light", "\"name\":\"Свет\",\"stat_t\":\"" + st + "\",\"val_tpl\":\"{{ value_json.light }}\",\"pl_on\":\"1\",\"pl_off\":\"0\",\"dev_cla\":\"light\"");
   haConfig("binary_sensor", "exhaust", "\"name\":\"Вытяжка\",\"stat_t\":\"" + st + "\",\"val_tpl\":\"{{ value_json.exhaust }}\",\"pl_on\":\"1\",\"pl_off\":\"0\"");
   haConfig("binary_sensor", "heater", "\"name\":\"Обогрев\",\"stat_t\":\"" + st + "\",\"val_tpl\":\"{{ value_json.heater }}\",\"pl_on\":\"1\",\"pl_off\":\"0\"");
-  haConfig("binary_sensor", "fan", "\"name\":\"Обдув\",\"stat_t\":\"" + st + "\",\"val_tpl\":\"{{ value_json.fan }}\",\"pl_on\":\"1\",\"pl_off\":\"0\"");
-  haConfig("binary_sensor", "humid", "\"name\":\"Увлажнитель\",\"stat_t\":\"" + st + "\",\"val_tpl\":\"{{ value_json.humid }}\",\"pl_on\":\"1\",\"pl_off\":\"0\"");
   haConfig("binary_sensor", "pump", "\"name\":\"Помпа\",\"stat_t\":\"" + st + "\",\"val_tpl\":\"{{ value_json.pump }}\",\"pl_on\":\"1\",\"pl_off\":\"0\"");
   haConfig("binary_sensor", "thermal", "\"name\":\"Перегрев\",\"stat_t\":\"" + st + "\",\"val_tpl\":\"{{ value_json.thermal }}\",\"pl_on\":\"1\",\"pl_off\":\"0\",\"dev_cla\":\"problem\"");
   haConfig("binary_sensor", "flood", "\"name\":\"Протечка\",\"stat_t\":\"" + st + "\",\"val_tpl\":\"{{ value_json.flood }}\",\"pl_on\":\"1\",\"pl_off\":\"0\",\"dev_cla\":\"moisture\"");
@@ -93,8 +91,6 @@ void mqttPublishDiscovery() {
   haConfig("select", "light_mode", "\"name\":\"Свет режим\",\"stat_t\":\"" + st + "\",\"val_tpl\":\"{{ value_json.mLight }}\",\"cmd_t\":\"" + cmd + "/light\",\"ops\":[\"auto\",\"on\",\"off\"]");
   haConfig("select", "exhaust_mode", "\"name\":\"Вытяжка режим\",\"stat_t\":\"" + st + "\",\"val_tpl\":\"{{ value_json.mExh }}\",\"cmd_t\":\"" + cmd + "/exhaust\",\"ops\":[\"auto\",\"on\",\"off\"]");
   haConfig("select", "heater_mode", "\"name\":\"Обогрев режим\",\"stat_t\":\"" + st + "\",\"val_tpl\":\"{{ value_json.mHeat }}\",\"cmd_t\":\"" + cmd + "/heater\",\"ops\":[\"auto\",\"on\",\"off\"]");
-  haConfig("select", "fan_mode", "\"name\":\"Обдув режим\",\"stat_t\":\"" + st + "\",\"val_tpl\":\"{{ value_json.mFan }}\",\"cmd_t\":\"" + cmd + "/fan\",\"ops\":[\"auto\",\"on\",\"off\"]");
-  haConfig("select", "humid_mode", "\"name\":\"Увлажнитель режим\",\"stat_t\":\"" + st + "\",\"val_tpl\":\"{{ value_json.mHumid }}\",\"cmd_t\":\"" + cmd + "/humid\",\"ops\":[\"auto\",\"on\",\"off\"]");
   haConfig("select", "stage_set", "\"name\":\"Стадия\",\"stat_t\":\"" + st + "\",\"val_tpl\":\"{{ value_json.stageKey }}\",\"cmd_t\":\"" + cmd + "/stage\",\"ops\":[\"veg\",\"bloom\",\"dry\"]");
 
   haConfig("button", "water1", "\"name\":\"Полив 1\",\"cmd_t\":\"" + cmd + "/water\",\"pl_prs\":\"0\"");
@@ -132,16 +128,12 @@ void mqttPublishState() {
   json += "\"light\":" + String(stateLight ? 1 : 0) + ",";
   json += "\"exhaust\":" + String(stateExhaust ? 1 : 0) + ",";
   json += "\"heater\":" + String(stateHeater ? 1 : 0) + ",";
-  json += "\"fan\":" + String(stateFan ? 1 : 0) + ",";
-  json += "\"humid\":" + String(stateHumid ? 1 : 0) + ",";
   json += "\"pump\":" + String(statePump ? 1 : 0) + ",";
   json += "\"thermal\":" + String(thermalShutdown ? 1 : 0) + ",";
   json += "\"flood\":" + String(isFloodDetected ? 1 : 0) + ",";
   json += "\"mLight\":\"" + String(modeStr(modeLight)) + "\",";
   json += "\"mExh\":\"" + String(modeStr(modeExhaust)) + "\",";
-  json += "\"mHeat\":\"" + String(modeStr(modeHeater)) + "\",";
-  json += "\"mFan\":\"" + String(modeStr(modeFan)) + "\",";
-  json += "\"mHumid\":\"" + String(modeStr(modeHumid)) + "\"";
+  json += "\"mHeat\":\"" + String(modeStr(modeHeater)) + "\";
   json += "}";
   mqttPublish(mqttBase() + "/state", json, false);
 }
