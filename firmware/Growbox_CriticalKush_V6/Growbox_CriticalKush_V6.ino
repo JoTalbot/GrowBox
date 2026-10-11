@@ -877,6 +877,14 @@ bool applyTelegramMode(const String& cmd, const char* prefix, const char* dev, c
   String rest = cmd.substring(p.length());
   rest.trim();
   OverrideMode parsed = (rest.length() == 0) ? MODE_AUTO : parseModeArg(rest);
+  if (dev == "heater" && parsed == MODE_ON && !heaterSafetyOk()) {
+    sendTelegramMessage("🛑 <b>Обогрев заблокирован защитой.</b>\nDHT22 должен выдавать корректные данные.");
+    return true;
+  }
+  if (dev == "light" && parsed == MODE_ON && thermalShutdown) {
+    sendTelegramMessage("🛑 <b>Свет заблокирован термозащитой.</b>");
+    return true;
+  }
   setDeviceMode(dev, parsed);
   sendTelegramMessage(String("🎛️ <b>") + title + ":</b> " + modeLabel(parsed));
   return true;
@@ -1374,13 +1382,15 @@ void checkTelegramUpdates() {
           int zone = callbackData.substring(6).toInt();
           if (activeWateringZone >= 0) answerTelegramCallback(callbackId, "Полив уже идёт: горшок #" + String(activeWateringZone + 1));
           else if (enableSafetySensors && (isWaterLow || isFloodDetected)) answerTelegramCallback(callbackId, isFloodDetected ? "Полив заблокирован: протечка" : "Полив заблокирован: низкий уровень воды");
-          else { triggerWatering(zone); answerTelegramCallback(callbackId, "Полив горшка #" + String(zone + 1) + " запущен"); }
+          else { answerTelegramCallback(callbackId, "Запускаю полив горшка #" + String(zone + 1)); triggerWatering(zone); }
           if (callbackMsgId > 0) editTelegramMessage(callbackMsgId, tgStatusText(), tgStatusInlineKeyboard());
         } else if (callbackData.startsWith("mode:")) {
           String rest = callbackData.substring(5); int sep = rest.indexOf(':');
           if (sep > 0) {
             String dev = rest.substring(0, sep); OverrideMode mode = parseModeArg(rest.substring(sep + 1));
             if (dev == "all") { allAuto(); answerTelegramCallback(callbackId, "Все устройства: AUTO"); }
+            else if (dev == "heater" && mode == MODE_ON && !heaterSafetyOk()) answerTelegramCallback(callbackId, "Обогрев заблокирован: проверьте DHT22");
+            else if (dev == "light" && mode == MODE_ON && thermalShutdown) answerTelegramCallback(callbackId, "Свет заблокирован термозащитой");
             else if (setDeviceMode(dev, mode)) answerTelegramCallback(callbackId, dev + ": " + modeLabel(mode));
             else answerTelegramCallback(callbackId, "Неизвестное устройство");
             if (callbackMsgId > 0) editTelegramMessage(callbackMsgId, "🎛️ <b>Управление устройствами</b>\nВыберите действие:", tgControlInlineKeyboard());
@@ -1396,8 +1406,8 @@ void checkTelegramUpdates() {
           if (!ntpReady()) answerTelegramCallback(callbackId, "NTP ещё не синхронизирован");
           else { startNewCycle(); answerTelegramCallback(callbackId, "Цикл сброшен, день 1"); }
         } else if (callbackData == "sensors:discover") {
+          answerTelegramCallback(callbackId, "Запускаю автоопределение");
           discoverSensors(true);
-          answerTelegramCallback(callbackId, "Автоопределение завершено");
           if (callbackMsgId > 0) editTelegramMessage(callbackMsgId, "🔎 <b>Автоопределение завершено.</b>\nDHT22: GPIO " + String(dhtPin) + "\nПочва: " + String(soilPins[0]) + ", " + String(soilPins[1]) + ", " + String(soilPins[2]), tgSensorsInlineKeyboard());
         } else if (callbackData == "sensors:status") {
           answerTelegramCallback(callbackId, "Статус датчиков отправлен");
@@ -1406,8 +1416,8 @@ void checkTelegramUpdates() {
           answerTelegramCallback(callbackId, "Версия отправлена");
           handleTelegramCommand("/version");
         } else if (callbackData == "update:check") {
+          answerTelegramCallback(callbackId, "Проверка OTA запускается");
           executeRemoteCommand("checkota", "", remoteKey);
-          answerTelegramCallback(callbackId, "Проверка OTA запущена");
           sendTelegramMessage("🔎 <b>Проверка OTA запущена вручную.</b>");
         } else if (callbackData == "service:on") {
           remoteEnabled = true; persistRemote();
