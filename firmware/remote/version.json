@@ -1,5 +1,5 @@
 {
-  "version": "6.5.27",
-  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.27/GrowBox-v6.5.27.bin",
-  "notes": "GPIO19 light relay; GPIO16 permanently energized; humidifier and airflow controls removed; Telegram device state refresh and simplified settings; OTA policy v4; OTA manifest updates only after release assets exist"
+  "version": "6.5.28",
+  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.28/GrowBox-v6.5.28.bin",
+  "notes": "Telegram status layout simplified; watering and relay controls moved inline; clearer settings; status refresh after actions; GPIO19 light control and existing safety protections retained"
 }
