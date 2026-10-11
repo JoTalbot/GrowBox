@@ -72,6 +72,25 @@ check(len(main_buttons) == 10, "main Telegram menu should expose ten working sec
 check(not any(re.search(r"обдув|увлажн", str(button), re.IGNORECASE) for button in main_buttons),
       "main Telegram menu still exposes removed controls")
 
+# Main reply-keyboard sections must all reach a real route.
+for route in [
+    'if (cmd == "📊 статус")',
+    'if (cmd == "🎛️ управление")',
+    'if (cmd == "🚿 полив")',
+    'if (cmd == "🌱 режим")',
+    'if (cmd == "🔌 датчики")',
+    'if (cmd == "⚙️ настройки"',
+    'if (cmd == "📦 обновления")',
+    'if (cmd == "🛰️ сервис")',
+    'if (cmd == "📷 камера")',
+    'if (cmd == "🔄 всё auto")',
+]:
+    check(route in fw, f"main menu route missing: {route}")
+check('sendTelegramInline("⚡ <b>Управление исполнительными устройствами</b>", tgControlInlineKeyboard())' in fw,
+      "legacy relay menu must open the real device controls")
+check('if (dev == "light" && mode == MODE_ON && thermalShutdown)' in fw,
+      "legacy text controls must respect the light thermal interlock")
+
 callback_values = []
 for name, payload in payloads.items():
     for row in payload.get("inline_keyboard", []):
