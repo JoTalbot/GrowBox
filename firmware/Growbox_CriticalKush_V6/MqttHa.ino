@@ -133,7 +133,7 @@ void mqttPublishState() {
   json += "\"flood\":" + String(isFloodDetected ? 1 : 0) + ",";
   json += "\"mLight\":\"" + String(modeStr(modeLight)) + "\",";
   json += "\"mExh\":\"" + String(modeStr(modeExhaust)) + "\",";
-  json += "\"mHeat\":\"" + String(modeStr(modeHeater)) + "\";
+  json += "\"mHeat\":\"" + String(modeStr(modeHeater)) + "\"";
   json += "}";
   mqttPublish(mqttBase() + "/state", json, false);
 }
