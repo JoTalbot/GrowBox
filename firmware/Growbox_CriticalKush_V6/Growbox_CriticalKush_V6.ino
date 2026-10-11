@@ -805,22 +805,22 @@ String relayModeStatus(const char* name, bool active, OverrideMode mode) {
 }
 String tgStatusText() {
   String stage = currentStage == STAGE_VEG ? "Вегетация" : (currentStage == STAGE_BLOOM ? "Цветение" : "Сушка");
-  String s = "🌿 <b>GrowBox • СТАТУС</b>\\n";
-  s += "━━━━━━━━━━━━━━━━━━\\n";
-  s += "🌱 Стадия: <b>" + stage + "</b>  •  День: <b>" + String(getGrowDay()) + "</b>\\n";
-  s += dhtConnected ? "🌡️ Температура: <b>" + String(temperature,1) + " °C</b>\\n" : "🌡️ Температура: ⚠️ датчик недоступен\\n";
-  s += dhtConnected ? "💧 Влажность воздуха: <b>" + String(humidity,0) + " %</b>  •  VPD: <b>" + String(vpd,2) + "</b>\\n" : "💧 Влажность воздуха: ⚠️ нет данных\\n";
+  String s = "🌿 <b>GrowBox • СТАТУС</b>\n";
+  s += "━━━━━━━━━━━━━━━━━━\n";
+  s += "🌱 Стадия: <b>" + stage + "</b>  •  День: <b>" + String(getGrowDay()) + "</b>\n";
+  s += dhtConnected ? "🌡️ Температура: <b>" + String(temperature,1) + " °C</b>\n" : "🌡️ Температура: ⚠️ датчик недоступен\n";
+  s += dhtConnected ? "💧 Влажность воздуха: <b>" + String(humidity,0) + " %</b>  •  VPD: <b>" + String(vpd,2) + "</b>\n" : "💧 Влажность воздуха: ⚠️ нет данных\n";
   s += "🪴 Почва: ";
   for (int i = 0; i < 3; i++) {
     if (i > 0) s += "  |  ";
     s += String(i + 1) + " ";
     s += soilConnected[i] ? "🟢 <b>" + String(soilMoisture[i]) + "%</b>" : "⚠️ нет данных";
   }
-  s += "\\n";
-  if (enableSafetySensors && isWaterLow) s += "🚨 <b>ВНИМАНИЕ: низкий уровень воды</b>\\n";
-  if (enableSafetySensors && isFloodDetected) s += "🚨 <b>АВАРИЯ: обнаружена протечка</b>\\n";
-  if (thermalShutdown) s += "🌡️ <b>ТЕРМОЗАЩИТА АКТИВНА</b>\\n";
-  if (!dhtConnected) s += "⚠️ Проверьте подключение DHT22\\n";
+  s += "\n";
+  if (enableSafetySensors && isWaterLow) s += "🚨 <b>ВНИМАНИЕ: низкий уровень воды</b>\n";
+  if (enableSafetySensors && isFloodDetected) s += "🚨 <b>АВАРИЯ: обнаружена протечка</b>\n";
+  if (thermalShutdown) s += "🌡️ <b>ТЕРМОЗАЩИТА АКТИВНА</b>\n";
+  if (!dhtConnected) s += "⚠️ Проверьте подключение DHT22\n";
   return s;
 }
 String tgControlText() {
@@ -1028,7 +1028,7 @@ void handleTelegramCommand(String cmd) {
   else if (cmd == "🛰️ Сервис") cmd = "🛰️ сервис";
   else if (cmd == "📷 Камера") cmd = "📷 камера";
   // Telegram UI: all core controls are available through buttons.
-  if (cmd == "⬅️ главное меню" || cmd == "🏠 главное меню") { sendTelegramMenu("🌿 <b>GrowBox</b>\\nВыберите действие 👇\\n\\n📊 Статус: датчики и полив\\n⚙️ Настройки: режим, датчики, OTA и сервис", tgMainKeyboard()); return; }
+  if (cmd == "⬅️ главное меню" || cmd == "🏠 главное меню") { sendTelegramMenu("🌿 <b>GrowBox</b>\nВыберите действие 👇\n\n📊 Статус: датчики и полив\n⚙️ Настройки: режим, датчики, OTA и сервис", tgMainKeyboard()); return; }
   if (cmd == "🎛️ управление") { sendTelegramInline(tgStatusText(), tgStatusInlineKeyboard()); return; }
   if (cmd == "📊 статус") { sendTelegramInline(tgStatusText(), tgStatusInlineKeyboard()); return; }
   if (cmd == "⚙️ настройки" || cmd == "⚙️ показать настройки" || cmd == "⬅️ настройки") { handleTelegramCommand("/settings"); return; }
@@ -1171,24 +1171,24 @@ void handleTelegramCommand(String cmd) {
     sendTelegramInline(tgStatusText(), tgStatusInlineKeyboard());
   }
   else if (cmd == "/settings") {
-    String s = "⚙️ <b>НАСТРОЙКИ GROWBOX v" + String(FIRMWARE_VERSION) + "</b>\\n";
-    s += "━━━━━━━━━━━━━━━━━━\\n";
-    s += "🌱 <b>Режим выращивания</b>\\n";
-    s += "  🌿 Вегетация: " + String(vegStartHour) + ":00–" + String(vegEndHour) + ":00\\n";
-    s += "  🌸 Цветение: " + String(bloomStartHour) + ":00–" + String(bloomEndHour) + ":00\\n";
-    s += "  🌅 Рассвет/закат: " + String(sunriseMin) + " мин\\n";
-    s += "🌡️ <b>Температура</b>\\n";
-    s += "  ☀️ День: " + String(tempTargetDay, 1) + " °C  •  🌙 Ночь: " + String(tempTargetNight, 1) + " °C\\n";
-    s += "  🍂 Сушка: " + String(tempTargetDry, 1) + " °C\\n";
-    s += "💧 <b>Влажность и VPD</b>\\n";
-    s += "  🍂 RH сушки: " + String(rhTargetDry, 0) + " % (±" + String(rhHystDry, 0) + ")\\n";
-    s += "  🌿 VPD вега: " + String(vpdVegMin, 2) + "–" + String(vpdVegMax, 2) + " kPa\\n";
-    s += "  🌸 VPD цветения: " + String(vpdBloomMin, 2) + "–" + String(vpdBloomMax, 2) + " kPa\\n";
-    s += "🚿 <b>Полив</b>\\n";
-    s += "  🪴 Порог: " + String(soilDryThreshold) + " %  •  ⏱️ Длительность: " + String(wateringDurationMs / 1000) + " сек\\n";
-    s += "  ⏳ Пауза впитывания: " + String(soilSoakDelayMs / 60000) + " мин\\n";
-    s += "💡 <b>Реле света</b>: GPIO19  •  🔌 GPIO16: постоянно ВКЛ\\n";
-    s += "\\n👇 <i>Выберите раздел кнопками ниже: стадия, датчики, OTA или сервис.</i>";
+    String s = "⚙️ <b>НАСТРОЙКИ GROWBOX v" + String(FIRMWARE_VERSION) + "</b>\n";
+    s += "━━━━━━━━━━━━━━━━━━\n";
+    s += "🌱 <b>Режим выращивания</b>\n";
+    s += "  🌿 Вегетация: " + String(vegStartHour) + ":00–" + String(vegEndHour) + ":00\n";
+    s += "  🌸 Цветение: " + String(bloomStartHour) + ":00–" + String(bloomEndHour) + ":00\n";
+    s += "  🌅 Рассвет/закат: " + String(sunriseMin) + " мин\n";
+    s += "🌡️ <b>Температура</b>\n";
+    s += "  ☀️ День: " + String(tempTargetDay, 1) + " °C  •  🌙 Ночь: " + String(tempTargetNight, 1) + " °C\n";
+    s += "  🍂 Сушка: " + String(tempTargetDry, 1) + " °C\n";
+    s += "💧 <b>Влажность и VPD</b>\n";
+    s += "  🍂 RH сушки: " + String(rhTargetDry, 0) + " % (±" + String(rhHystDry, 0) + ")\n";
+    s += "  🌿 VPD вега: " + String(vpdVegMin, 2) + "–" + String(vpdVegMax, 2) + " kPa\n";
+    s += "  🌸 VPD цветения: " + String(vpdBloomMin, 2) + "–" + String(vpdBloomMax, 2) + " kPa\n";
+    s += "🚿 <b>Полив</b>\n";
+    s += "  🪴 Порог: " + String(soilDryThreshold) + " %  •  ⏱️ Длительность: " + String(wateringDurationMs / 1000) + " сек\n";
+    s += "  ⏳ Пауза впитывания: " + String(soilSoakDelayMs / 60000) + " мин\n";
+    s += "💡 <b>Реле света</b>: GPIO19  •  🔌 GPIO16: постоянно ВКЛ\n";
+    s += "\n👇 <i>Выберите раздел кнопками ниже: стадия, датчики, OTA или сервис.</i>";
     sendTelegramInline(s, tgSettingsInlineKeyboard());
   }
   else if (cmd == "/water1" || cmd == "/water 1") triggerWatering(0);
