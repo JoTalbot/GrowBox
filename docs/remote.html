@@ -54,7 +54,6 @@
     </div>
     <div class="row"><span>Вытяжка</span><span id="pExh" class="pill">—</span></div>
     <div class="row"><span>Обогрев</span><span id="pHeat" class="pill">—</span></div>
-    <div class="row"><span>Обдув</span><span id="pFan" class="pill">—</span></div>
     <div class="grid2">
       <button class="sec" onclick="cmd('ping')">📡 Ping</button>
       <button class="sec" onclick="cmd('status')">🔄 Запросить сейчас</button>
@@ -98,12 +97,6 @@
       <button data-m="auto" onclick="cmd('mode','heater:auto')">Авто</button>
       <button data-m="on" onclick="cmd('mode','heater:on')">Вкл</button>
       <button data-m="off" onclick="cmd('mode','heater:off')">Выкл</button>
-    </div>
-    <div>Обдув</div>
-    <div class="modes" id="mdFan">
-      <button data-m="auto" onclick="cmd('mode','fan:auto')">Авто</button>
-      <button data-m="on" onclick="cmd('mode','fan:on')">Вкл</button>
-      <button data-m="off" onclick="cmd('mode','fan:off')">Выкл</button>
     </div>
     <div class="grid2">
       <button onclick="cmd('auto')">Все в авто</button>
@@ -177,7 +170,6 @@ function paint(j){
   $('summary').textContent = [
     bit('свет', !!Number(j.light), j.mLight),
     bit('вытяжка', !!Number(j.exhaust), j.mExh),
-    bit('обдув', !!Number(j.fan), j.mFan)
   ].join(' · ');
   $('fw').textContent = 'v' + (j.fw || '—');
   $('stage').textContent = (j.stage || '—') + ' / день ' + (j.day ?? '—');
@@ -189,12 +181,10 @@ function paint(j){
   pill('pLight', !!Number(j.light));
   pill('pExh', !!Number(j.exhaust));
   pill('pHeat', !!Number(j.heater));
-  pill('pFan', !!Number(j.fan));
   if (j.mLight) markModes('mdLight', j.mLight);
   else markModes('mdLight', Number(j.light) ? 'on' : 'off');
   if (j.mExh) markModes('mdExh', j.mExh);
   if (j.mHeat) markModes('mdHeat', j.mHeat);
-  if (j.mFan) markModes('mdFan', j.mFan);
   document.querySelectorAll('[data-stage]').forEach(b => {
     b.classList.toggle('sel', b.dataset.stage === j.stage);
   });
@@ -302,7 +292,7 @@ async function cmd(c, arg){
   busy = true; lastSent = body; lastAt = Date.now();
   if (c === 'mode' && String(arg).includes(':')) {
     const [dev, mode] = String(arg).split(':');
-    const map = { light:'mdLight', exhaust:'mdExh', heater:'mdHeat', fan:'mdFan' };
+    const map = { light:'mdLight', exhaust:'mdExh', heater:'mdHeat' };
     if (map[dev]) markModes(map[dev], mode);
   }
   log('→ ' + c + (arg ? ' ' + arg : ''));
