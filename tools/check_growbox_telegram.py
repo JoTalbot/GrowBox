@@ -54,9 +54,10 @@ check(not legacy_symbols.search(fw), "obsolete fan/humidifier firmware symbols o
 
 # Every inline keyboard must be valid JSON and every callback must have a handler.
 keyboard_names = [
-    "tgMainKeyboard", "tgStatusInlineKeyboard", "tgControlInlineKeyboard",
-    "tgWaterInlineKeyboard", "tgStageInlineKeyboard", "tgSensorsInlineKeyboard",
-    "tgUpdateInlineKeyboard", "tgServiceInlineKeyboard", "tgCameraInlineKeyboard",
+    "tgMainKeyboard", "tgSettingsInlineKeyboard", "tgStatusInlineKeyboard",
+    "tgControlInlineKeyboard", "tgWaterInlineKeyboard", "tgStageInlineKeyboard",
+    "tgSensorsInlineKeyboard", "tgUpdateInlineKeyboard", "tgServiceInlineKeyboard",
+    "tgCameraInlineKeyboard",
 ]
 payloads = {}
 try:
@@ -68,26 +69,40 @@ main_buttons = [
     button for row in payloads.get("tgMainKeyboard", {}).get("keyboard", [])
     for button in row
 ]
-check(len(main_buttons) == 10, "main Telegram menu should expose ten working sections")
-check(not any(re.search(r"обдув|увлажн", str(button), re.IGNORECASE) for button in main_buttons),
-      "main Telegram menu still exposes removed controls")
+check(len(main_buttons) == 4, "main Telegram menu should contain only Status, Control, Settings and Camera")
+main_labels = [str(button) for button in main_buttons]
+check(any("Статус" in label for label in main_labels), "main menu must expose overall status")
+check(any("Управление" in label for label in main_labels), "main menu must expose relay controls")
+check(any("Настройки" in label for label in main_labels), "main menu must expose settings")
+check(any("Камера" in label for label in main_labels), "main menu must expose camera")
+check(not any(re.search(r"полив|всё auto|датчики|обновления|сервис|режим", label, re.IGNORECASE) for label in main_labels),
+      "secondary sections must be nested under Settings and the watering menu removed")
+check("settings:stage" in str(payloads.get("tgSettingsInlineKeyboard", {})), "settings must contain the grow-mode route")
+check("settings:sensors" in str(payloads.get("tgSettingsInlineKeyboard", {})), "settings must contain the sensor route")
+check("settings:update" in str(payloads.get("tgSettingsInlineKeyboard", {})), "settings must contain the update route")
+check("settings:service" in str(payloads.get("tgSettingsInlineKeyboard", {})), "settings must contain the service route")
+control_buttons = [button for row in payloads.get("tgControlInlineKeyboard", {}).get("inline_keyboard", []) for button in row]
+check(not any(re.search(r"всё auto|статус|главное меню", str(button), re.IGNORECASE) for button in control_buttons),
+      "device controls must not contain All AUTO, Status or Main Menu buttons")
+check("String tgControlText()" in fw and "relayModeStatus(" in fw,
+      "device controls must show current relay mode and active state")
+check('editTelegramMessage(callbackMsgId, tgControlText(), tgControlInlineKeyboard())' in fw,
+      "relay callbacks must refresh device status in-place")
 
 # Main reply-keyboard sections must all reach a real route.
 for route in [
     'if (cmd == "📊 статус")',
     'if (cmd == "🎛️ управление")',
-    'if (cmd == "🚿 полив")',
-    'if (cmd == "🌱 режим")',
-    'if (cmd == "🔌 датчики")',
     'if (cmd == "⚙️ настройки"',
-    'if (cmd == "📦 обновления")',
-    'if (cmd == "🛰️ сервис")',
     'if (cmd == "📷 камера")',
-    'if (cmd == "🔄 всё auto")',
+    'callbackData == "settings:stage"',
+    'callbackData == "settings:sensors"',
+    'callbackData == "settings:update"',
+    'callbackData == "settings:service"',
 ]:
     check(route in fw, f"main menu route missing: {route}")
-check('sendTelegramInline("⚡ <b>Управление исполнительными устройствами</b>", tgControlInlineKeyboard())' in fw,
-      "legacy relay menu must open the real device controls")
+check('sendTelegramInline(tgControlText(), tgControlInlineKeyboard())' in fw,
+      "relay menu must open the real device controls with current state")
 check('if (dev == "light" && mode == MODE_ON && thermalShutdown)' in fw,
       "legacy text controls must respect the light thermal interlock")
 
