@@ -839,7 +839,7 @@ String tgServiceInlineKeyboard() {
   return "{\"inline_keyboard\":[[{\"text\":\"🛰️ Remote ON\",\"callback_data\":\"service:on\"},{\"text\":\"🛰️ Remote OFF\",\"callback_data\":\"service:off\"}],[{\"text\":\"📥 Опрос сейчас\",\"callback_data\":\"service:pull\"},{\"text\":\"🏠 Главное меню\",\"callback_data\":\"menu:home\"}]]}";
 }
 String tgCameraInlineKeyboard() {
-  return "{\"inline_keyboard\":[[{\"text\":\"📷 Получить фото\",\"callback_data\":\"camera:photo\"},{\"text\":\"🏠 Главное меню\",\"callback_data\":\"menu:home\"}]]}";
+  return "{\"inline_keyboard\":[[{\"text\":\"📷 Открыть фото\",\"callback_data\":\"camera:photo\"},{\"text\":\"🏠 Главное меню\",\"callback_data\":\"menu:home\"}]]}";
 }
 
 void triggerWatering(int zone) {
@@ -1029,7 +1029,12 @@ void handleTelegramCommand(String cmd) {
   if (cmd == "🔎 проверить ota") { executeRemoteCommand("checkota", "", remoteKey); sendTelegramMenu("🔎 <b>Проверка OTA запущена вручную.</b>", tgMainKeyboard()); return; }
   if (cmd == "🛰️ remote on") { remoteEnabled = true; persistRemote(); sendTelegramMenu("🛰️ Remote <b>включён</b>.", tgMainKeyboard()); return; }
   if (cmd == "🛰️ remote off") { remoteEnabled = false; persistRemote(); sendTelegramMenu("🛰️ Remote <b>выключен</b>.", tgMainKeyboard()); return; }
-  if (cmd == "📥 pull") { lastRemotePoll = 0; sendTelegramMenu("📥 Канал поставлен на немедленный опрос.", tgMainKeyboard()); return; }
+  if (cmd == "📥 pull") {
+    if (!remoteEnabled) sendTelegramMessage("🛰️ Remote выключен. Сначала включите удалённый канал.");
+    else if (WiFi.status() != WL_CONNECTED) sendTelegramMessage("📡 Нет Wi-Fi. Опрос канала невозможен.");
+    else { lastRemotePoll = 0; sendTelegramMessage("📥 Канал поставлен на немедленный опрос."); }
+    return;
+  }
   if (cmd == "📷 получить фото") { sendTelegramMenu("📷 <b>ESP32-CAM</b>\n" + camIp + "/capture", tgMainKeyboard()); return; }
   if (cmd == "💡 свет" || cmd == "🌀 вент" || cmd == "🔥 тепл") {
     String icon = "💡";
@@ -1225,8 +1230,9 @@ void handleTelegramCommand(String cmd) {
     sendTelegramMessage("🛰️ Удалённый канал выключен");
   }
   else if (cmd == "/pull") {
-    lastRemotePoll = 0;
-    sendTelegramMessage("📥 Форсирую опрос канала");
+    if (!remoteEnabled) sendTelegramMessage("🛰️ Remote выключен. Сначала включите удалённый канал.");
+    else if (WiFi.status() != WL_CONNECTED) sendTelegramMessage("📡 Нет Wi-Fi. Опрос канала невозможен.");
+    else { lastRemotePoll = 0; sendTelegramMessage("📥 Форсирую опрос канала"); }
   }
   else if (cmd == "/otacheck") {
     executeRemoteCommand("checkota", "", remoteKey);
@@ -1428,9 +1434,13 @@ void checkTelegramUpdates() {
           answerTelegramCallback(callbackId, "Remote выключен");
           if (callbackMsgId > 0) editTelegramMessage(callbackMsgId, "🛰️ Remote: <b>OFF</b>", tgServiceInlineKeyboard());
         } else if (callbackData == "service:pull") {
-          lastRemotePoll = 0;
-          answerTelegramCallback(callbackId, "Опрос запрошен");
-          sendTelegramMessage("📥 Канал поставлен на немедленный опрос.");
+          if (!remoteEnabled) answerTelegramCallback(callbackId, "Сначала включите Remote");
+          else if (WiFi.status() != WL_CONNECTED) answerTelegramCallback(callbackId, "Нет Wi-Fi");
+          else {
+            answerTelegramCallback(callbackId, "Опрос запрошен");
+            lastRemotePoll = 0;
+            sendTelegramMessage("📥 Канал поставлен на немедленный опрос.");
+          }
         } else if (callbackData == "camera:photo") {
           answerTelegramCallback(callbackId, "Ссылка на камеру отправлена");
           sendTelegramMessage("📷 <b>ESP32-CAM:</b>\n" + camIp + "/capture");
