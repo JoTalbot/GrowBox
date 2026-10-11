@@ -72,12 +72,12 @@ main_buttons = [
     button for row in payloads.get("tgMainKeyboard", {}).get("keyboard", [])
     for button in row
 ]
-check(len(main_buttons) == 4, "main Telegram menu should contain only Status, Control, Settings and Camera")
+check(len(main_buttons) == 2, "main Telegram menu should contain only Status and Settings")
 main_labels = [str(button) for button in main_buttons]
+check(not any(re.search(r"управление|камера", label, re.IGNORECASE) for label in main_labels),
+      "Control and Camera must not appear in the main Telegram menu")
 check(any("Статус" in label for label in main_labels), "main menu must expose overall status")
-check(any("Управление" in label for label in main_labels), "main menu must expose relay controls")
 check(any("Настройки" in label for label in main_labels), "main menu must expose settings")
-check(any("Камера" in label for label in main_labels), "main menu must expose camera")
 check(not any(re.search(r"полив|всё auto|датчики|обновления|сервис|режим", label, re.IGNORECASE) for label in main_labels),
       "secondary sections must be nested under Settings and the watering menu removed")
 check("settings:stage" in str(payloads.get("tgSettingsInlineKeyboard", {})), "settings must contain the grow-mode route")
@@ -89,17 +89,24 @@ check(not any(re.search(r"всё auto|статус|главное меню", str
       "device controls must not contain All AUTO, Status or Main Menu buttons")
 check("String tgControlText()" in fw and "relayModeStatus(" in fw,
       "device controls must show current relay mode and active state")
-check('if (cmd == "📊 статус") { sendTelegramMenu(tgStatusText(), tgMainKeyboard()); return; }' in fw,
-      "overall status must refresh the persistent simplified main keyboard")
-check('editTelegramMessage(callbackMsgId, tgControlText(), tgControlInlineKeyboard())' in fw,
-      "relay callbacks must refresh device status in-place")
+check('if (cmd == "📊 статус") { sendTelegramInline(tgStatusText(), tgStatusInlineKeyboard()); return; }' in fw,
+      "overall status must show watering and relay controls inline")
+check('editTelegramMessage(callbackMsgId, tgStatusText(), tgStatusInlineKeyboard())' in fw,
+      "relay and watering callbacks must refresh the status message in-place")
+status_start = fw.find("String tgStatusText() {")
+status_end = fw.find("String tgControlText() {", status_start)
+status_block = fw[status_start:status_end]
+check('🌱 Стадия: <b>' in status_block and status_block.find('🌱 Стадия: <b>') < status_block.find('🌡️ Температура:'),
+      "grow stage must appear before temperature in status")
+check('🪴 Почва: ' in status_block and 'Зона ' not in status_block,
+      "soil moisture zones must be compact and use numeric labels only")
+check('🌡️ <b>Климат</b>' not in status_block and 'Реле и режимы' not in status_block,
+      "status must omit Climate and relay/mode headings")
 
 # Main reply-keyboard sections must all reach a real route.
 for route in [
     'if (cmd == "📊 статус")',
-    'if (cmd == "🎛️ управление")',
     'if (cmd == "⚙️ настройки"',
-    'if (cmd == "📷 камера")',
     'callbackData == "settings:stage"',
     'callbackData == "settings:sensors"',
     'callbackData == "settings:update"',
@@ -160,7 +167,10 @@ try:
     check(bool(manifest.get("version")), "OTA manifest version is missing")
     check("v" + manifest.get("version", "") + "/" in manifest.get("url", ""),
           "OTA manifest URL must match its published version")
-    check(release_meta.get("version") == "6.5.27", "release metadata version mismatch")
+    def version_tuple(value: str) -> tuple[int, ...]:
+        return tuple(int(part) for part in value.split("."))
+    check(version_tuple(manifest.get("version", "0")) <= version_tuple(release_meta.get("version", "0")),
+          "OTA manifest must not be newer than the release metadata")
     check(release_meta.get("version") != manifest.get("version") or
           "v" + release_meta.get("version", "") + "/" in manifest.get("url", ""),
           "new OTA manifest can only point at the release matching its version")
