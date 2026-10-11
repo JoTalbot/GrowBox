@@ -41,8 +41,11 @@ check("setRelay(RELAY_LIGHT_CONTROL, stateLight)" in fw, "GPIO19 must follow the
 check(fw.count("setRelay(RELAY_LIGHT, true)") >= 3, "GPIO16 must be energized during boot and control updates")
 check(not re.search(r"setRelay\(RELAY_LIGHT,\s*false\)", fw), "GPIO16 must never be switched off by runtime logic")
 check("GPIO21" not in fw, "removed humidifier GPIO21 must not be referenced")
-check('#define FIRMWARE_VERSION  "6.5.27"' in fw, "normal firmware version must match OTA manifest")
-check('#define FIRMWARE_VERSION  "6.5.27-dry"' in fw, "dry firmware version must match OTA manifest")
+release_meta = json.loads((ROOT / "firmware/remote/release-version.json").read_text(encoding="utf-8"))
+check('#define FIRMWARE_VERSION  "' + release_meta.get("version", "") + '"' in fw,
+      "normal firmware version must match release metadata")
+check('#define FIRMWARE_VERSION  "' + release_meta.get("version", "") + '-dry"' in fw,
+      "dry firmware version must match release metadata")
 
 legacy_symbols = re.compile(
     r"\b(RELAY_FAN|RELAY_HUMIDIFIER|stateFan|modeFan|stateHumid|modeHumid|"
@@ -153,8 +156,14 @@ for relative, pattern in surfaces.items():
 
 try:
     manifest = json.loads((ROOT / "firmware/remote/version.json").read_text(encoding="utf-8"))
-    check(manifest.get("version") == "6.5.27", "OTA manifest version mismatch")
-    check("v6.5.27" in manifest.get("url", ""), "OTA manifest URL mismatch")
+    release_meta = json.loads((ROOT / "firmware/remote/release-version.json").read_text(encoding="utf-8"))
+    check(bool(manifest.get("version")), "OTA manifest version is missing")
+    check("v" + manifest.get("version", "") + "/" in manifest.get("url", ""),
+          "OTA manifest URL must match its published version")
+    check(release_meta.get("version") == "6.5.27", "release metadata version mismatch")
+    check(release_meta.get("version") != manifest.get("version") or
+          "v" + release_meta.get("version", "") + "/" in manifest.get("url", ""),
+          "new OTA manifest can only point at the release matching its version")
 except (OSError, json.JSONDecodeError) as exc:
     failures.append(f"invalid OTA manifest: {exc}")
 
