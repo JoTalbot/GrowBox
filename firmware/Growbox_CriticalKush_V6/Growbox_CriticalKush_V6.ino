@@ -1008,7 +1008,7 @@ void handleTelegramCommand(String cmd) {
   if (cmd == "📊 статус") { sendTelegramInline(tgStatusText(), tgStatusInlineKeyboard()); return; }
   if (cmd == "⚙️ настройки" || cmd == "⚙️ показать настройки") { handleTelegramCommand("/settings"); return; }
   if (cmd == "🔌 датчики") { sendTelegramInline("🔌 <b>Датчики</b>\nВыберите действие:", tgSensorsInlineKeyboard()); return; }
-  if (cmd == "⚡ реле") { sendTelegramMenu("⚡ <b>Управление исполнительными устройствами</b>", tgMainKeyboard()); return; }
+  if (cmd == "⚡ реле") { sendTelegramInline("⚡ <b>Управление исполнительными устройствами</b>", tgControlInlineKeyboard()); return; }
   if (cmd == "🌱 режим") { sendTelegramInline("🌱 <b>Стадия выращивания</b>\nВыберите режим:", tgStageInlineKeyboard()); return; }
   if (cmd == "⬅️ настройки") { sendTelegramMenu("⚙️ <b>Настройки GrowBox</b>", tgMainKeyboard()); return; }
   if (cmd == "⬅️ статус") { handleTelegramCommand("/status"); return; }
@@ -1051,6 +1051,7 @@ void handleTelegramCommand(String cmd) {
     String arg = cmd.substring(cmd.lastIndexOf(' ') + 1);
     OverrideMode mode = (arg == "on") ? MODE_ON : (arg == "off" ? MODE_OFF : MODE_AUTO);
     if (dev == "heater" && mode == MODE_ON && !heaterSafetyOk()) { sendTelegramMenu("🛑 <b>Обогрев заблокирован защитой.</b>\nDHT22 должен выдавать корректные данные.", tgMainKeyboard()); return; }
+    if (dev == "light" && mode == MODE_ON && thermalShutdown) { sendTelegramMenu("🛑 <b>Свет заблокирован термозащитой.</b>", tgMainKeyboard()); return; }
     setDeviceMode(dev, mode);
     sendTelegramMenu("🎛️ <b>" + title + ":</b> " + modeLabel(mode), tgMainKeyboard()); return;
   }
