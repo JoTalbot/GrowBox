@@ -1,5 +1,5 @@
 {
-  "version": "6.5.27",
-  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.27/GrowBox-v6.5.27.bin",
-  "notes": "GPIO19 light relay; GPIO16 permanently energized; humidifier and airflow controls removed; Telegram menu callbacks audited; OTA policy v4"
+  "version": "6.5.26",
+  "url": "https://github.com/JoTalbot/GrowBox/releases/download/v6.5.26/GrowBox-v6.5.26.bin",
+  "notes": "Current published release; the next OTA version is published only after its GitHub Release assets are available."
 }
