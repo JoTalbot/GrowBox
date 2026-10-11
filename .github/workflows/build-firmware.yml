@@ -23,6 +23,8 @@ jobs:
           python-version: "3.11"
       - name: Install PlatformIO
         run: pip install -U platformio
+      - name: Check Telegram buttons and relay mapping
+        run: python tools/check_growbox_telegram.py
       - name: Build firmware
         run: pio run -e esp32dev -e esp32dev_dry -e esp32dev_mqtt
       - name: Build OTA service
