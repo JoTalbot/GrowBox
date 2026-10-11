@@ -1396,7 +1396,7 @@ void checkTelegramUpdates() {
             else if (dev == "light" && mode == MODE_ON && thermalShutdown) answerTelegramCallback(callbackId, "Свет заблокирован термозащитой");
             else if (setDeviceMode(dev, mode)) answerTelegramCallback(callbackId, dev + ": " + modeLabel(mode));
             else answerTelegramCallback(callbackId, "Неизвестное устройство");
-            if (callbackMsgId > 0) editTelegramMessage(callbackMsgId, tgControlText(), tgControlInlineKeyboard());
+            if (callbackMsgId > 0) editTelegramMessage(callbackMsgId, tgStatusText(), tgStatusInlineKeyboard());
           }
         } else if (callbackData.startsWith("stage:")) {
           String stage = callbackData.substring(6);
