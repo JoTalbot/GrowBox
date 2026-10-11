@@ -61,7 +61,6 @@ rest:
       - name: GrowBox обогрев
         unique_id: growbox_heater
         value_template: "{{ value_json.heater == 1 }}"
-      - name: GrowBox обдув
       - name: GrowBox помпа
         unique_id: growbox_pump
         value_template: "{{ value_json.pump == 1 }}"
