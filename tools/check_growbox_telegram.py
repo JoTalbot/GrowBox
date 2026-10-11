@@ -86,7 +86,7 @@ check(bool(handler), "Telegram callback handler region not found")
 missing = []
 for value in callback_values:
     if value.startswith("water:"):
-        supported = 'callbackData.startsWith("water:")' in handler
+        supported = f'callbackData == "{value}"' in handler
     elif value.startswith("mode:"):
         supported = 'callbackData.startsWith("mode:")' in handler
     elif value.startswith("stage:"):
