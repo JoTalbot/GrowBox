@@ -849,25 +849,23 @@ String tgControlInlineKeyboard() {
          "[{\"text\":\"🔥 Обогрев: ВКЛ\",\"callback_data\":\"mode:heater:on\"},{\"text\":\"🔄 АВТО\",\"callback_data\":\"mode:heater:auto\"},{\"text\":\"⏹ ВЫКЛ\",\"callback_data\":\"mode:heater:off\"}]]}";
 }
 String tgWaterInlineKeyboard() {
-  return "{\"inline_keyboard\":[[{\"text\":\"🚿 Горшок 1\",\"callback_data\":\"water:0\"},{\"text\":\"🚿 Горшок 2\",\"callback_data\":\"water:1\"},{\"text\":\"🚿 Горшок 3\",\"callback_data\":\"water:2\"}],[{\"text\":\"📊 Статус\",\"callback_data\":\"status:refresh\"},{\"text\":\"🏠 Главное меню\",\"callback_data\":\"menu:home\"}]]}";
+  return "{\"inline_keyboard\":[[{\"text\":\"🚿 Горшок 1\",\"callback_data\":\"water:0\"},{\"text\":\"🚿 Горшок 2\",\"callback_data\":\"water:1\"},{\"text\":\"🚿 Горшок 3\",\"callback_data\":\"water:2\"}]]}";
 }
-
-
 
 String tgStageInlineKeyboard() {
-  return "{\"inline_keyboard\":[[{\"text\":\"🌱 Вегетация\",\"callback_data\":\"stage:veg\"},{\"text\":\"🌸 Цветение\",\"callback_data\":\"stage:bloom\"},{\"text\":\"🍂 Сушка\",\"callback_data\":\"stage:dry\"}],[{\"text\":\"📅 Сброс дня\",\"callback_data\":\"cycle:reset\"},{\"text\":\"🏠 Главное меню\",\"callback_data\":\"menu:home\"}]]}";
+  return "{\"inline_keyboard\":[[{\"text\":\"🌱 Вегетация\",\"callback_data\":\"stage:veg\"},{\"text\":\"🌸 Цветение\",\"callback_data\":\"stage:bloom\"},{\"text\":\"🍂 Сушка\",\"callback_data\":\"stage:dry\"}],[{\"text\":\"📅 Сброс дня\",\"callback_data\":\"cycle:reset\"}]]}";
 }
 String tgSensorsInlineKeyboard() {
-  return "{\"inline_keyboard\":[[{\"text\":\"🔎 Обнаружить датчики\",\"callback_data\":\"sensors:discover\"},{\"text\":\"📋 Статус датчиков\",\"callback_data\":\"sensors:status\"}],[{\"text\":\"🏠 Главное меню\",\"callback_data\":\"menu:home\"}]]}";
+  return "{\"inline_keyboard\":[[{\"text\":\"🔎 Обнаружить датчики\",\"callback_data\":\"sensors:discover\"},{\"text\":\"📋 Статус датчиков\",\"callback_data\":\"sensors:status\"}]]}";
 }
 String tgUpdateInlineKeyboard() {
-  return "{\"inline_keyboard\":[[{\"text\":\"📦 Версия\",\"callback_data\":\"update:version\"},{\"text\":\"🔎 Проверить OTA\",\"callback_data\":\"update:check\"}],[{\"text\":\"🏠 Главное меню\",\"callback_data\":\"menu:home\"}]]}";
+  return "{\"inline_keyboard\":[[{\"text\":\"📦 Версия\",\"callback_data\":\"update:version\"},{\"text\":\"🔎 Проверить OTA\",\"callback_data\":\"update:check\"}]]}";
 }
 String tgServiceInlineKeyboard() {
-  return "{\"inline_keyboard\":[[{\"text\":\"🛰️ Remote ON\",\"callback_data\":\"service:on\"},{\"text\":\"🛰️ Remote OFF\",\"callback_data\":\"service:off\"}],[{\"text\":\"📥 Опрос сейчас\",\"callback_data\":\"service:pull\"},{\"text\":\"🏠 Главное меню\",\"callback_data\":\"menu:home\"}]]}";
+  return "{\"inline_keyboard\":[[{\"text\":\"🛰️ Remote ON\",\"callback_data\":\"service:on\"},{\"text\":\"🛰️ Remote OFF\",\"callback_data\":\"service:off\"}],[{\"text\":\"📥 Опрос сейчас\",\"callback_data\":\"service:pull\"}]]}";
 }
 String tgCameraInlineKeyboard() {
-  return "{\"inline_keyboard\":[[{\"text\":\"📷 Открыть фото\",\"callback_data\":\"camera:photo\"},{\"text\":\"🏠 Главное меню\",\"callback_data\":\"menu:home\"}]]}";
+  return "{\"inline_keyboard\":[[{\"text\":\"📷 Открыть фото\",\"callback_data\":\"camera:photo\"}]]}";
 }
 
 void triggerWatering(int zone) {
