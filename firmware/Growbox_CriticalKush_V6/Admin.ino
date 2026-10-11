@@ -61,14 +61,6 @@ void handleAdmin() {
   html += "<button class=s onclick=\"fetch('/setMode?d=heater&m=auto').then(()=>location.reload())\">Авто</button>";
   html += "<button class=s onclick=\"fetch('/setMode?d=heater&m=on').then(()=>location.reload())\">Вкл</button>";
   html += "<button class=s onclick=\"fetch('/setMode?d=heater&m=off').then(()=>location.reload())\">Выкл</button>";
-  html += "<div class=r><span>Обдув " + String(stateFan ? "ВКЛ" : "ВЫКЛ") + " / " + String(modeShort(modeFan)) + "</span></div>";
-  html += "<button class=s onclick=\"fetch('/setMode?d=fan&m=auto').then(()=>location.reload())\">Авто</button>";
-  html += "<button class=s onclick=\"fetch('/setMode?d=fan&m=on').then(()=>location.reload())\">Вкл</button>";
-  html += "<button class=s onclick=\"fetch('/setMode?d=fan&m=off').then(()=>location.reload())\">Выкл</button>";
-  html += "<div class=r><span>Увлажн " + String(stateHumid ? "ВКЛ" : "ВЫКЛ") + " / " + String(modeShort(modeHumid)) + "</span></div>";
-  html += "<button class=s onclick=\"fetch('/setMode?d=humid&m=auto').then(()=>location.reload())\">Авто</button>";
-  html += "<button class=s onclick=\"fetch('/setMode?d=humid&m=on').then(()=>location.reload())\">Вкл</button>";
-  html += "<button class=s onclick=\"fetch('/setMode?d=humid&m=off').then(()=>location.reload())\">Выкл</button>";
   html += "<br><button class=s onclick=\"fetch('/allAuto').then(()=>location.reload())\">Все в авто</button></div>";
 
   html += "<div class='c'><b>Климат</b><form action=/saveSettings method=POST>";
