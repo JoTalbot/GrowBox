@@ -73,9 +73,9 @@ main_buttons = [
     for button in row
 ]
 check(len(main_buttons) == 2, "main Telegram menu should contain only Status and Settings")
+main_labels = [str(button) for button in main_buttons]
 check(not any(re.search(r"управление|камера", label, re.IGNORECASE) for label in main_labels),
       "Control and Camera must not appear in the main Telegram menu")
-main_labels = [str(button) for button in main_buttons]
 check(any("Статус" in label for label in main_labels), "main menu must expose overall status")
 check(any("Настройки" in label for label in main_labels), "main menu must expose settings")
 check(not any(re.search(r"полив|всё auto|датчики|обновления|сервис|режим", label, re.IGNORECASE) for label in main_labels),
