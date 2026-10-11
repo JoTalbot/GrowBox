@@ -1,4 +1,4 @@
 {
   "version": "6.5.27",
-  "notes": "GPIO19 light relay; GPIO16 permanently energized; humidifier and airflow controls removed; Telegram device state refresh and simplified settings; OTA policy v4"
+  "notes": "GPIO19 light relay; GPIO16 permanently energized; humidifier and airflow controls removed; Telegram device state refresh and simplified settings; OTA policy v4; OTA manifest updates only after release assets exist"
 }
