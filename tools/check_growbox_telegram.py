@@ -86,6 +86,8 @@ check(not any(re.search(r"всё auto|статус|главное меню", str
       "device controls must not contain All AUTO, Status or Main Menu buttons")
 check("String tgControlText()" in fw and "relayModeStatus(" in fw,
       "device controls must show current relay mode and active state")
+check('if (cmd == "📊 статус") { sendTelegramMenu(tgStatusText(), tgMainKeyboard()); return; }' in fw,
+      "overall status must refresh the persistent simplified main keyboard")
 check('editTelegramMessage(callbackMsgId, tgControlText(), tgControlInlineKeyboard())' in fw,
       "relay callbacks must refresh device status in-place")
 
