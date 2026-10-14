@@ -58,7 +58,7 @@ jobs:
   # bypass the separate hardware and TLS acceptance gates.
   release:
     needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') && vars.HARDWARE_ACCEPTANCE_APPROVED == 'true' && vars.TLS_ACCEPTANCE_APPROVED == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
