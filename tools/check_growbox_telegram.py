@@ -10,6 +10,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 FW_PATH = ROOT / "firmware/Growbox_CriticalKush_V6/Growbox_CriticalKush_V6.ino"
 fw = FW_PATH.read_text(encoding="utf-8")
+SERVICE_OTA_PATH = ROOT / "firmware/Growbox_OTA_Service/Growbox_OTA_Service.ino"
+service_ota = SERVICE_OTA_PATH.read_text(encoding="utf-8")
 failures: list[str] = []
 
 
@@ -33,6 +35,16 @@ def keyboard(name: str) -> dict:
             fragments.append(json.loads(literal.group(0)))
     return json.loads("".join(fragments))
 
+
+# Recovery AP must not ship a universal password. Credentials are per-device and
+# disclosed only on the local serial console for physical service access.
+check('String serviceApPassword()' in service_ota, "service OTA must derive a per-device AP password")
+check('String serviceApSsid()' in service_ota, "service OTA recovery AP must use a per-device SSID")
+check('WiFi.softAP(apSsid.c_str(), apPassword.c_str())' in service_ota,
+      "service OTA must use the derived recovery AP credentials")
+check('12345678' not in service_ota, "universal service OTA AP password must not ship")
+check('Serial.println("Password: " + apPassword)' in service_ota,
+      "service OTA must disclose recovery credentials only on local serial console")
 
 # Relay mapping and safety invariants.
 check(bool(re.search(r"#define RELAY_LIGHT\s+16\b", fw)), "legacy light relay must be GPIO16")
