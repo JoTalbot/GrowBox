@@ -31,6 +31,8 @@ jobs:
         run: pip install -U platformio
       - name: Check Telegram buttons and relay mapping
         run: python tools/check_growbox_telegram.py
+      - name: Check TLS and recovery AP security invariants
+        run: python tools/check_security_invariants.py
       - name: Build firmware
         run: pio run -e esp32dev -e esp32dev_dry -e esp32dev_mqtt
       - name: Build OTA service
@@ -56,7 +58,7 @@ jobs:
   # bypass the separate hardware and TLS acceptance gates.
   release:
     needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') && vars.HARDWARE_ACCEPTANCE_APPROVED == 'true' && vars.TLS_ACCEPTANCE_APPROVED == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
