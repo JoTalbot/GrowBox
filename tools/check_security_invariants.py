@@ -8,6 +8,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 REMOTE = ROOT / "firmware/Growbox_CriticalKush_V6/RemoteAgent.ino"
+FIRMWARE_SOURCES = list((ROOT / "firmware/Growbox_CriticalKush_V6").glob("*.ino"))
 SERVICE = ROOT / "firmware/Growbox_OTA_Service/Growbox_OTA_Service.ino"
 WORKFLOW = ROOT / ".github/workflows/build-firmware.yml"
 
@@ -24,6 +25,8 @@ service = SERVICE.read_text(encoding="utf-8")
 workflow = WORKFLOW.read_text(encoding="utf-8")
 
 require("setInsecure(" not in remote, "remote agent does not disable TLS verification")
+require(all("setInsecure(" not in p.read_text(encoding="utf-8") for p in FIRMWARE_SOURCES),
+        "no main-firmware sketch disables TLS verification")
 require("setCACertBundle(x509_crt_bundle)" in remote,
         "remote HTTPS configures the maintained CA bundle")
 require("if (now < 1735689600L) return false;" in remote,
