@@ -14,7 +14,7 @@ bool configureVerifiedTls(WiFiClientSecure& client) {
     delay(250);
   }
   if (now < 1735689600L) return false;
-  client.setCACertBundle(x509_crt_bundle, x509_crt_bundle_len);
+  client.setCACertBundle(x509_crt_bundle);
   return true;
 }
 
