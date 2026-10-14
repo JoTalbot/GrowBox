@@ -117,7 +117,7 @@ jobs:
               repo: context.repo.repo,
               path,
               message: `[release] Publish OTA manifest v${version} after release assets`,
-              content: Buffer.from(JSON.stringify(next, null, 2) + '\\n').toString('base64'),
+              content: Buffer.from(JSON.stringify(next, null, 2) + '\n').toString('base64'),
               sha: current.data.sha,
               branch: 'main'
             });
