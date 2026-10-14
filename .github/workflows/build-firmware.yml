@@ -52,9 +52,11 @@ jobs:
           name: firmware-bin
           path: dist/*.bin
 
+  # Publishing is intentionally tag-only. A commit message on main must never
+  # bypass the separate hardware and TLS acceptance gates.
   release:
     needs: build
-    if: startsWith(github.ref, 'refs/tags/v') || (github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[release]'))
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -115,8 +117,8 @@ jobs:
               repo: context.repo.repo,
               path,
               message: `[release] Publish OTA manifest v${version} after release assets`,
-              content: Buffer.from(JSON.stringify(next, null, 2) + '\n').toString('base64'),
+              content: Buffer.from(JSON.stringify(next, null, 2) + '\\n').toString('base64'),
               sha: current.data.sha,
               branch: 'main'
             });
-            core.info(`OTA manifest updated to ${version} after release publication.`);
+            core.info(`OTA manifest updated to v${version} after release publication.`);
