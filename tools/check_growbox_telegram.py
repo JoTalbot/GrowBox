@@ -52,7 +52,7 @@ check('Serial.println("Password: " + apPassword)' in service_ota,
 REMOTE_PATH = ROOT / "firmware/Growbox_CriticalKush_V6/RemoteAgent.ino"
 remote = REMOTE_PATH.read_text(encoding="utf-8")
 check('#include <esp32_cert_bundle.h>' in remote, "remote agent must include the maintained root CA bundle")
-check('client.setCACertBundle(x509_crt_bundle, x509_crt_bundle_len)' in remote,
+check('client.setCACertBundle(x509_crt_bundle)' in remote,
       "remote HTTPS must validate against the CA bundle")
 check('bool configureVerifiedTls(WiFiClientSecure& client)' in remote,
       "TLS setup must centralize certificate validation")
