@@ -46,6 +46,26 @@ check('12345678' not in service_ota, "universal service OTA AP password must not
 check('Serial.println("Password: " + apPassword)' in service_ota,
       "service OTA must disclose recovery credentials only on local serial console")
 
+
+# TLS and OTA must fail closed: public CA bundle, plausible system time, and
+# HTTPS-only transport for both metadata and firmware downloads.
+REMOTE_PATH = ROOT / "firmware/Growbox_CriticalKush_V6/RemoteAgent.ino"
+remote = REMOTE_PATH.read_text(encoding="utf-8")
+check('#include <esp32_cert_bundle.h>' in remote, "remote agent must include the maintained root CA bundle")
+check('client.setCACertBundle(x509_crt_bundle)' in remote,
+      "remote HTTPS must validate against the CA bundle")
+check('bool configureVerifiedTls(WiFiClientSecure& client)' in remote,
+      "TLS setup must centralize certificate validation")
+check('if (now < 1735689600L) return false;' in remote,
+      "TLS must fail closed when system time is not trustworthy")
+check('setInsecure()' not in remote, "remote agent must never disable TLS certificate validation")
+check('if (!u.startsWith("https://"))' in remote, "OTA must reject non-HTTPS firmware URLs")
+check('WiFi.status() != WL_CONNECTED || !url.startsWith("https://")' in remote,
+      "remote metadata and status transport must reject non-HTTPS URLs")
+check('https://github.com/tanakamasayuki/ESP32CertBundle.git' in
+      (ROOT / "platformio.ini").read_text(encoding="utf-8"),
+      "build must include the maintained ESP32 root certificate bundle")
+
 # Relay mapping and safety invariants.
 check(bool(re.search(r"#define RELAY_LIGHT\s+16\b", fw)), "legacy light relay must be GPIO16")
 check(bool(re.search(r"#define RELAY_LIGHT_CONTROL\s+19\b", fw)), "controllable light relay must be GPIO19")

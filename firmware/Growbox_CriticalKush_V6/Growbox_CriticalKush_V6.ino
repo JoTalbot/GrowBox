@@ -48,9 +48,9 @@
 
 #define WDT_TIMEOUT_SEC   45
 #ifdef GROWBOX_FORCE_DRY
-#define FIRMWARE_VERSION  "6.5.28-dry"
+#define FIRMWARE_VERSION  "6.5.29-dry"
 #else
-#define FIRMWARE_VERSION  "6.5.28"
+#define FIRMWARE_VERSION  "6.5.29"
 #endif
 
 enum GrowStage {
@@ -601,7 +601,7 @@ String urlEncode(const String& value) {
 void telegramSyncOffset() {
   if (!tgEnabled || tgBotToken.length() < 15 || tgChatId.length() < 3 || WiFi.status() != WL_CONNECTED) return;
   WiFiClientSecure client;
-  client.setInsecure();
+  if (!configureVerifiedTls(client)) return;
   HTTPClient http;
   http.setTimeout(5000);
   String url = String("https://api.telegram.org/bot") + tgBotToken + "/getUpdates?offset=-1&limit=1&timeout=0";
@@ -634,7 +634,7 @@ void telegramInit() {
   }
 
   WiFiClientSecure client;
-  client.setInsecure();
+  if (!configureVerifiedTls(client)) return;
   HTTPClient http;
   http.setTimeout(5000);
   http.setUserAgent("GrowBox/" FIRMWARE_VERSION);
@@ -688,7 +688,7 @@ void sendTelegramHttp(String msg, const String& keyboard = "") {
 
   feedWatchdog();
   WiFiClientSecure client;
-  client.setInsecure();
+  if (!configureVerifiedTls(client)) return;
   HTTPClient http;
   http.setTimeout(5000);
   http.setUserAgent("GrowBox/" FIRMWARE_VERSION);
@@ -731,7 +731,7 @@ void sendTelegramInline(String msg, const String& inlineKeyboard) {
   if (!tgEnabled || tgBotToken.length() < 15 || tgChatId.length() < 3 || WiFi.status() != WL_CONNECTED) return;
   feedWatchdog();
   WiFiClientSecure client;
-  client.setInsecure();
+  if (!configureVerifiedTls(client)) return;
   HTTPClient http;
   http.setTimeout(5000);
   http.setUserAgent("GrowBox/" FIRMWARE_VERSION);
@@ -756,7 +756,7 @@ void sendTelegramInline(String msg, const String& inlineKeyboard) {
 bool editTelegramMessage(long messageId, const String& msg, const String& inlineKeyboard) {
   if (!tgEnabled || messageId <= 0 || tgBotToken.length() < 15 || tgChatId.length() < 3 || WiFi.status() != WL_CONNECTED) return false;
   WiFiClientSecure client;
-  client.setInsecure();
+  if (!configureVerifiedTls(client)) return false;
   HTTPClient http;
   http.setTimeout(5000);
   http.setUserAgent("GrowBox/" FIRMWARE_VERSION);
@@ -780,7 +780,7 @@ bool editTelegramMessage(long messageId, const String& msg, const String& inline
 void answerTelegramCallback(const String& callbackId, const String& text = "") {
   if (!tgEnabled || callbackId.length() < 3 || WiFi.status() != WL_CONNECTED) return;
   WiFiClientSecure client;
-  client.setInsecure();
+  if (!configureVerifiedTls(client)) return;
   HTTPClient http;
   http.setTimeout(5000);
   String url = String("https://api.telegram.org/bot") + tgBotToken + "/answerCallbackQuery";
@@ -1318,7 +1318,7 @@ void checkTelegramUpdates() {
 
   feedWatchdog();
   WiFiClientSecure client;
-  client.setInsecure();
+  if (!configureVerifiedTls(client)) return;
   HTTPClient http;
   http.setTimeout(5000);
   http.setUserAgent("GrowBox/" FIRMWARE_VERSION);

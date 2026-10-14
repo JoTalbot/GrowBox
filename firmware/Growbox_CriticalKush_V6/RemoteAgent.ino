@@ -1,5 +1,22 @@
-// Удалённый агент: исходящий HTTPS через ntfy + optional inbox.json + HTTP OTA.
+#include <esp32_cert_bundle.h>
+// Удалённый агент: исходящий HTTPS через ntfy + optional inbox.json + HTTPS OTA.
 // ESP32 за NAT сам открывает соединение наружу.
+
+// Use the maintained Mozilla-derived root bundle. TLS fails closed until NTP has
+// supplied a plausible wall clock, so expired/not-yet-valid certificates cannot
+// be accepted merely because the ESP32 booted without time.
+bool configureVerifiedTls(WiFiClientSecure& client) {
+  time_t now = 0;
+  for (int attempt = 0; attempt < 32; ++attempt) {
+    time(&now);
+    if (now >= 1735689600L) break; // 2025-01-01 UTC
+    feedWatchdog();
+    delay(250);
+  }
+  if (now < 1735689600L) return false;
+  client.setCACertBundle(x509_crt_bundle);
+  return true;
+}
 
 String deviceId() {
   uint64_t mac = ESP.getEfuseMac();
@@ -77,10 +94,10 @@ int versionCode(const String& v) {
 }
 
 String httpsGet(const String& url, uint16_t timeoutMs = 4500) {
-  if (WiFi.status() != WL_CONNECTED) return "";
+  if (WiFi.status() != WL_CONNECTED || !url.startsWith("https://")) return "";
   feedWatchdog();
   WiFiClientSecure client;
-  client.setInsecure();
+  if (!configureVerifiedTls(client)) return "";
   client.setTimeout(timeoutMs / 1000);
   HTTPClient http;
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
@@ -96,10 +113,10 @@ String httpsGet(const String& url, uint16_t timeoutMs = 4500) {
 }
 
 bool httpsPost(const String& url, const String& body, const char* title) {
-  if (WiFi.status() != WL_CONNECTED) return false;
+  if (WiFi.status() != WL_CONNECTED || !url.startsWith("https://")) return false;
   feedWatchdog();
   WiFiClientSecure client;
-  client.setInsecure();
+  if (!configureVerifiedTls(client)) return false;
   HTTPClient http;
   http.setTimeout(4000);
   http.setUserAgent("GrowBox/" FIRMWARE_VERSION);
@@ -154,8 +171,8 @@ void publishRemoteStatus(const String& event) {
 void requestOta(const String& url) {
   String u = url;
   u.trim();
-  if (!u.startsWith("http://") && !u.startsWith("https://")) {
-    lastOtaResult = "bad url";
+  if (!u.startsWith("https://")) {
+    lastOtaResult = "HTTPS required";
     lastRemoteEvent = "ota-bad-url";
     return;
   }
@@ -183,23 +200,27 @@ void performPendingOta() {
   }
 
   feedWatchdog();
-  WiFiClientSecure secureClient;
-  WiFiClient plainClient;
-  if (url.startsWith("https://")) {
-    secureClient.setInsecure();
-    secureClient.setTimeout(20);
-  } else {
-    plainClient.setTimeout(20);
+  if (!url.startsWith("https://")) {
+    lastOtaResult = "HTTPS required";
+    lastRemoteEvent = "ota-fail";
+    sendTelegramMessage("❌ OTA: требуется HTTPS");
+    return;
   }
+  WiFiClientSecure secureClient;
+  if (!configureVerifiedTls(secureClient)) {
+    lastOtaResult = "TLS time unavailable";
+    lastRemoteEvent = "ota-fail";
+    sendTelegramMessage("❌ OTA: нет достоверного времени для проверки TLS");
+    return;
+  }
+  secureClient.setTimeout(20);
 
   HTTPClient http;
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   http.setTimeout(15000);
   http.setUserAgent("GrowBox/" FIRMWARE_VERSION);
 
-  bool beginOk = url.startsWith("https://")
-      ? http.begin(secureClient, url)
-      : http.begin(plainClient, url);
+  bool beginOk = http.begin(secureClient, url);
 
   if (!beginOk) {
     lastOtaResult = "http begin failed";
