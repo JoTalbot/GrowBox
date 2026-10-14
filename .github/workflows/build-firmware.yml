@@ -1,6 +1,10 @@
 name: Build firmware
 # [release] v6.5.8 Telegram UTF-8 + factory image
 
+# Default to read-only; the release job explicitly elevates contents to write.
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
   push:
