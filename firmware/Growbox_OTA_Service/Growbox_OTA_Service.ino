@@ -8,6 +8,24 @@
 
 WebServer server(80);
 
+// The recovery AP is only enabled when saved Wi-Fi credentials cannot connect.
+// Derive a per-device credential and print it locally over USB serial; never ship
+// a universal fallback password. This is a physical-service access control, not
+// a substitute for authenticated firmware signing or secure boot.
+String serviceApPassword() {
+  uint64_t mac = ESP.getEfuseMac();
+  char password[9];
+  snprintf(password, sizeof(password), "%08X", (uint32_t)mac);
+  return String(password);
+}
+
+String serviceApSsid() {
+  uint64_t mac = ESP.getEfuseMac();
+  char ssid[24];
+  snprintf(ssid, sizeof(ssid), "Growbox-OTA-%04X", (uint16_t)(mac >> 32));
+  return String(ssid);
+}
+
 static const char PAGE[] PROGMEM = R"html(
 <!DOCTYPE html><html lang="ru"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -56,7 +74,12 @@ void connectWifi() {
 
   if (WiFi.status() != WL_CONNECTED) {
     WiFi.mode(WIFI_AP);
-    WiFi.softAP("Growbox-OTA", "12345678");
+    const String apSsid = serviceApSsid();
+    const String apPassword = serviceApPassword();
+    WiFi.softAP(apSsid.c_str(), apPassword.c_str());
+    Serial.println("[ServiceOTA] recovery AP credentials (physical access only):");
+    Serial.println("SSID: " + apSsid);
+    Serial.println("Password: " + apPassword);
   }
 }
 
@@ -106,7 +129,7 @@ void setup() {
   if (WiFi.isConnected()) {
     Serial.println(WiFi.localIP());
   } else {
-    Serial.println("AP Growbox-OTA / 12345678");
+    Serial.println("Recovery AP credentials were printed above.");
   }
 }
 
