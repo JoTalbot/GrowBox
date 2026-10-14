@@ -9,6 +9,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 REMOTE = ROOT / "firmware/Growbox_CriticalKush_V6/RemoteAgent.ino"
 SERVICE = ROOT / "firmware/Growbox_OTA_Service/Growbox_OTA_Service.ino"
+WORKFLOW = ROOT / ".github/workflows/build-firmware.yml"
 
 
 def require(condition: bool, message: str) -> None:
@@ -20,6 +21,7 @@ def require(condition: bool, message: str) -> None:
 
 remote = REMOTE.read_text(encoding="utf-8")
 service = SERVICE.read_text(encoding="utf-8")
+workflow = WORKFLOW.read_text(encoding="utf-8")
 
 require("setInsecure(" not in remote, "remote agent does not disable TLS verification")
 require("setCACertBundle(x509_crt_bundle)" in remote,
@@ -36,5 +38,9 @@ require('WiFi.softAP(apSsid.c_str(), apPassword.c_str())' in service,
         "recovery AP uses the derived SSID/password")
 require('"12345678"' not in service,
         "service AP has no universal default password")
+require("vars.HARDWARE_ACCEPTANCE_APPROVED == 'true'" in workflow,
+        "release requires explicit hardware acceptance approval")
+require("vars.TLS_ACCEPTANCE_APPROVED == 'true'" in workflow,
+        "release requires explicit TLS/security acceptance approval")
 
 print("Static security regression checks passed; hardware acceptance remains required.")
