@@ -1,4 +1,4 @@
 {
-  "version": "6.5.28",
-  "notes": "Telegram status layout simplified; watering and relay controls moved inline; clearer settings; status refresh after actions; GPIO19 light control and existing safety protections retained"
+  "version": "6.5.29",
+  "notes": "Verified TLS certificate chains for Telegram and remote HTTPS; HTTPS-only OTA and metadata; per-device recovery AP credentials; existing relay and thermal safety behavior retained"
 }
